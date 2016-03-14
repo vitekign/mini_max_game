@@ -14,11 +14,13 @@ using namespace std;
 #define DRAW 0
 #define NOT_OVER -1
 
-#define INT_RAW 0
+#define INT_ROW 0
 #define EXT_ROW 1
 #define INT_COL 1
 #define EXT_COL 0
 
+#define ROW 0
+#define COL 1
 
 /* BOARD */
 #define BRD_LENGTH  7
@@ -33,9 +35,9 @@ using namespace std;
 #define H_X 8
 
 int board[7][7];
-char labels[] = {'-', 'T', '~', '*', 'X', 't', '+', '@', 'x'};
-int moveFromInternal[2];
-int moveToInternal[2];
+char board_labels[] = {'-', 'T', '~', '*', 'X', 't', '+', '@', 'x'};
+int moveFromI[2];
+int moveToI[2];
 char moveFromExternal[2];
 char moveToExternal[2];
 
@@ -59,6 +61,8 @@ void convertMoveToInternalRep(char *move);
 
 void convertMoveExternalRep();
 
+bool isMoveLegal();
+
 int main() {
     setupBoard();
     printBoard();
@@ -68,10 +72,11 @@ int main() {
 #if RUN_TEST
     convertMoveToInternalRep("A1B4");
     convertMoveExternalRep();
-    cout << "A1 : " << moveFromInternal[0] << moveFromInternal[1] << " : " << moveFromExternal[0] <<
-    moveFromExternal[1]<< endl;
-    cout << "B4 : " << moveToInternal[0] << moveToInternal[1] << " : " << moveToExternal[0]
-    << moveToExternal[1]<< endl;
+    cout << "A1 : " << moveFromI[0] << moveFromI[1] << " : " << moveFromExternal[0] <<
+    moveFromExternal[1] << endl;
+    cout << "B4 : " << moveToI[0] << moveToI[1] << " : " << moveToExternal[0]
+    << moveToExternal[1] << endl;
+    cout << (isMoveLegal() ? "The move is legal" : "The move is illegal");
 #endif
 //    for(;;){
 //        getAMove();
@@ -138,7 +143,7 @@ void printBoard(){
     for(int i = 0; i < BRD_LENGTH; i++){
         for (int j = 0; j < BRD_LENGTH; j++){
             decorateRows(i,j);
-            cout << labels[board[i][j]] << " ";
+            cout << board_labels[board[i][j]] << " ";
             labelAdversariesBoards(i, j);
         }
         cout << endl;
@@ -148,67 +153,75 @@ void printBoard(){
 
 void convertMoveToInternalRep(char *move){
     if(move[0] == 'A'){
-        moveFromInternal[1] = 0;
+        moveFromI[1] = 0;
     } else if(move[0] == 'B'){
-        moveFromInternal[1] = 1;
+        moveFromI[1] = 1;
     } else if(move[0] == 'C'){
-        moveFromInternal[1] = 2;
+        moveFromI[1] = 2;
     } else if(move[0] == 'D'){
-        moveFromInternal[1] = 3;
+        moveFromI[1] = 3;
     } else if(move[0] == 'E'){
-        moveFromInternal[1] = 4;
+        moveFromI[1] = 4;
     } else if(move[0] == 'F'){
-        moveFromInternal[1] = 5;
+        moveFromI[1] = 5;
     } else if(move[0] == 'G'){
-        moveFromInternal[1] = 6;
+        moveFromI[1] = 6;
+    } else {
+        moveFromI[1] = -1;
     }
 
     if(move[1] == '1'){
-        moveFromInternal[0] = 6;
+        moveFromI[0] = 6;
     } else if(move[1] == '2'){
-        moveFromInternal[0] = 5;
+        moveFromI[0] = 5;
     } else if(move[1] == '3'){
-        moveFromInternal[0] = 4;
+        moveFromI[0] = 4;
     } else if(move[1] == '4'){
-        moveFromInternal[0] = 3;
+        moveFromI[0] = 3;
     } else if(move[1] == '5'){
-        moveFromInternal[0] = 2;
+        moveFromI[0] = 2;
     } else if(move[1] == '6'){
-        moveFromInternal[0] = 1;
+        moveFromI[0] = 1;
     } else if(move[1] == '7'){
-        moveFromInternal[0] = 0;
+        moveFromI[0] = 0;
+    } else {
+        moveFromI[0] = -1;
     }
 
     if(move[2] == 'A'){
-        moveToInternal[1] = 0;
+        moveToI[1] = 0;
     } else if(move[2] == 'B'){
-        moveToInternal[1] = 1;
+        moveToI[1] = 1;
     } else if(move[2] == 'C'){
-        moveToInternal[1] = 2;
+        moveToI[1] = 2;
     } else if(move[2] == 'D'){
-        moveToInternal[1] = 3;
+        moveToI[1] = 3;
     } else if(move[2] == 'E'){
-        moveToInternal[1] = 4;
+        moveToI[1] = 4;
     } else if(move[2] == 'F'){
-        moveToInternal[1] = 5;
+        moveToI[1] = 5;
     } else if(move[2] == 'G'){
-        moveToInternal[1] = 6;
+        moveToI[1] = 6;
+    } else {
+        moveToI[1] = -1;
     }
 
     if(move[3] == '1'){
-        moveToInternal[0] = 6;
+        moveToI[0] = 6;
     } else if(move[3] == '2'){
-        moveToInternal[0] = 5;
+        moveToI[0] = 5;
     } else if(move[3] == '3'){
-        moveToInternal[0] = 4;
+        moveToI[0] = 4;
     } else if(move[3] == '4'){
-        moveToInternal[0] = 3;
+        moveToI[0] = 3;
     } else if(move[3] == '5'){
-        moveToInternal[0] = 2;
+        moveToI[0] = 2;
     } else if(move[3] == '6'){
-        moveToInternal[0] = 1;
+        moveToI[0] = 1;
     } else if(move[3] == '7'){
-        moveToInternal[0] = 0;
+        moveToI[0] = 0;
+    } else {
+        moveToI[0] = -1;
     }
 }
 
@@ -217,25 +230,25 @@ void convertMoveExternalRep(){
         int const *convFrom;
         char *convTo;
         if(i == 0){
-            convFrom = moveFromInternal;
+            convFrom = moveFromI;
             convTo = moveFromExternal;
         } else {
-            convFrom = moveToInternal;
+            convFrom = moveToI;
             convTo = moveToExternal;
         }
-        if(convFrom[INT_RAW] == 0){
+        if(convFrom[INT_ROW] == 0){
             convTo[EXT_ROW] = '7';
-        } else if(convFrom[INT_RAW] == 1){
+        } else if(convFrom[INT_ROW] == 1){
             convTo[EXT_ROW] = '6';
-        } else if(convFrom[INT_RAW] == 2){
+        } else if(convFrom[INT_ROW] == 2){
             convTo[EXT_ROW] = '5';
-        } else if(convFrom[INT_RAW] == 3){
+        } else if(convFrom[INT_ROW] == 3){
             convTo[EXT_ROW] = '4';
-        } else if(convFrom[INT_RAW] == 4){
+        } else if(convFrom[INT_ROW] == 4){
             convTo[EXT_ROW] = '3';
-        } else if(convFrom[INT_RAW] == 5){
+        } else if(convFrom[INT_ROW] == 5){
             convTo[EXT_ROW] = '2';
-        } else if(convFrom[INT_RAW] == 6){
+        } else if(convFrom[INT_ROW] == 6){
             convTo[EXT_ROW] = '1';
         }
 
@@ -258,7 +271,123 @@ void convertMoveExternalRep(){
     }
 }
 
-bool checkIfMoveLegal(){
+bool isMoveBeyondBoundaries(int *move) {
+    return move[ROW] > (BRD_LENGTH - 1) ||
+           move[ROW] < 0 ||
+           move[COL] > (BRD_LENGTH - 1) ||
+           move[ROW] < 0;
+}
+
+bool isMoveBeyondBoundaries() {
+    return moveFromI[INT_ROW] > (BRD_LENGTH - 1) ||
+           moveFromI[INT_ROW] < 0 ||
+           moveFromI[INT_COL] > (BRD_LENGTH - 1) ||
+           moveFromI[INT_COL] < 0 ||
+           moveToI[INT_ROW] > (BRD_LENGTH - 1) ||
+           moveToI[INT_ROW] < 0 ||
+           moveToI[INT_COL] > (BRD_LENGTH - 1) ||
+           moveToI[INT_COL] < 0;
+}
+
+bool isMoveLegal(){
+    if(isMoveBeyondBoundaries())
+        return false;
+
+
+    return true;
+}
+
+bool collidesWithComFigures(int *move){
+    return board[move[ROW]][move[COL]] == C_T ||
+           board[move[ROW]][move[COL]] == C_W ||
+           board[move[ROW]][move[COL]] == C_X ||
+           board[move[ROW]][move[COL]] == C_D ;
+}
+
+bool collidesWithHumFigures(int *move){
+    return board[move[ROW]][move[COL]] == H_T ||
+           board[move[ROW]][move[COL]] == H_W ||
+           board[move[ROW]][move[COL]] == H_X ||
+           board[move[ROW]][move[COL]] == H_D ;
+}
+
+bool collidesWithBeatableHumFig(int *move){
+    return board[move[ROW]][move[COL]] == H_T ||
+           board[move[ROW]][move[COL]] == H_X;
+}
+
+bool collidesWithHumDeath(int *move){
+    return board[move[ROW]][move[COL]] == H_D;
+}
+
+void moveCompTLeft(int *move){
+    if(isMoveBeyondBoundaries(move) || collidesWithComFigures(move))
+        return;
+    if(collidesWithBeatableHumFig(move)){
+        //add current move to the database
+        return;
+    }
+    //add current move to the database
+    move[COL]--; moveCompTLeft(move);
+}
+void moveCompTRight(int *move){
+    if(isMoveBeyondBoundaries(move) || collidesWithComFigures(move))
+        return;
+    if(collidesWithBeatableHumFig(move)){
+        //add current move to the database
+        return;
+    }
+    //add current move to the database
+    move[COL]++; moveCompTRight(move);
+}
+void moveCompTUp(int *move){
+    if(isMoveBeyondBoundaries(move) || collidesWithComFigures(move))
+        return;
+
+    if(collidesWithHumDeath(move) || collidesWithBeatableHumFig(move)){
+        //add current move to the database
+        return;
+    }
+    move[ROW]--; moveCompTUp(move);
+}
+void moveCompTDown(int *move){
+    if(isMoveBeyondBoundaries(move) || collidesWithComFigures(move))
+        return;
+    if(collidesWithBeatableHumFig(move)){
+        //add current move to the database
+        return;
+    }
+    //add current the move to the database
+    move[ROW]++ ; moveCompTDown(move);
+}
+
+void findAllMovesForCompT(int *move){
+    moveCompTLeft(move);
+    moveCompTRight(move);
+    moveCompTUp(move);
+    moveCompTDown(move);
+}
+
+
+void generateAllMoves(){
+    int move[2];
+    for(int i = 0; i < BRD_LENGTH; i++){
+        for(int j = 0; j < BRD_LENGTH; j++){
+            if(board[i][j] != board_labels[C_W] &&
+               board[i][j] != board_labels[C_D] &&
+               board[i][j] != board_labels[H_W] &&
+               board[i][j] != board_labels[H_D]){
+                    move[0] = i;
+                    move[1] = j;
+
+                    if(board[i][j] == board_labels[C_T]){
+                        findAllMovesForCompT(move);
+                    }
+            }
+        }
+    }
+}
+
     /* 1. If the move goes beyond BRD_LENGTH - 1
      *      IT'S ILLEGAL
      * 2. If the move has negatives
@@ -275,7 +404,7 @@ bool checkIfMoveLegal(){
      *      down-left
      *      down-left
      */
-}
+
 
 void getAMove(){
     int i;
