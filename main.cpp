@@ -3,7 +3,7 @@
 using namespace std;
 
 
-#define RUN_TEST 0
+#define RUN_TEST 1
 
 #define H 2
 #define C 1
@@ -213,69 +213,48 @@ void convertMoveToInternalRep(char *move){
 }
 
 void convertMoveExternalRep(){
+    for(int i = 0; i < 2; i++){
+        int const *convFrom;
+        char *convTo;
+        if(i == 0){
+            convFrom = moveFromInternal;
+            convTo = moveFromExternal;
+        } else {
+            convFrom = moveToInternal;
+            convTo = moveToExternal;
+        }
+        if(convFrom[INT_RAW] == 0){
+            convTo[EXT_ROW] = '7';
+        } else if(convFrom[INT_RAW] == 1){
+            convTo[EXT_ROW] = '6';
+        } else if(convFrom[INT_RAW] == 2){
+            convTo[EXT_ROW] = '5';
+        } else if(convFrom[INT_RAW] == 3){
+            convTo[EXT_ROW] = '4';
+        } else if(convFrom[INT_RAW] == 4){
+            convTo[EXT_ROW] = '3';
+        } else if(convFrom[INT_RAW] == 5){
+            convTo[EXT_ROW] = '2';
+        } else if(convFrom[INT_RAW] == 6){
+            convTo[EXT_ROW] = '1';
+        }
 
-    if(moveFromInternal[INT_RAW] == 0){
-        moveFromExternal[EXT_ROW] = '7';
-    } else if(moveFromInternal[INT_RAW] == 1){
-        moveFromExternal[EXT_ROW] = '6';
-    } else if(moveFromInternal[INT_RAW] == 2){
-        moveFromExternal[EXT_ROW] = '5';
-    } else if(moveFromInternal[INT_RAW] == 3){
-        moveFromExternal[EXT_ROW] = '4';
-    } else if(moveFromInternal[INT_RAW] == 4){
-        moveFromExternal[EXT_ROW] = '3';
-    } else if(moveFromInternal[INT_RAW] == 5){
-        moveFromExternal[EXT_ROW] = '2';
-    } else if(moveFromInternal[INT_RAW] == 6){
-        moveFromExternal[EXT_ROW] = '1';
-    }
 
-    if(moveFromInternal[INT_COL] == 0){
-        moveFromExternal[EXT_COL] = 'A';
-    } else if(moveFromInternal[INT_COL] == 1){
-        moveFromExternal[EXT_COL] = 'B';
-    } else if(moveFromInternal[INT_COL] == 2){
-        moveFromExternal[EXT_COL] = 'C';
-    } else if(moveFromInternal[INT_COL] == 3){
-        moveFromExternal[EXT_COL] = 'D';
-    } else if(moveFromInternal[INT_COL] == 4){
-        moveFromExternal[EXT_COL] = 'E';
-    } else if(moveFromInternal[INT_COL] == 5){
-        moveFromExternal[EXT_COL] = 'F';
-    } else if(moveFromInternal[INT_COL] == 6){
-        moveFromExternal[EXT_COL] = 'G';
-    }
-
-    if(moveToInternal[INT_RAW] == 0){
-        moveToExternal[EXT_ROW] = '7';
-    } else if(moveFromInternal[INT_RAW] == 1){
-        moveToExternal[EXT_ROW] = '6';
-    } else if(moveToInternal[INT_RAW] == 2){
-        moveToExternal[EXT_ROW] = '5';
-    } else if(moveToInternal[INT_RAW] == 3){
-        moveToExternal[EXT_ROW] = '4';
-    } else if(moveToInternal[INT_RAW] == 4){
-        moveToExternal[EXT_ROW] = '3';
-    } else if(moveToInternal[INT_RAW] == 5){
-        moveToExternal[EXT_ROW] = '2';
-    } else if(moveToInternal[INT_RAW] == 6){
-        moveFromExternal[EXT_ROW] = '1';
-    }
-
-    if(moveToInternal[INT_COL] == 0){
-        moveToExternal[EXT_COL] = 'A';
-    } else if(moveToInternal[INT_COL] == 1){
-        moveToExternal[EXT_COL] = 'B';
-    } else if(moveToInternal[INT_COL] == 2){
-        moveToExternal[EXT_COL] = 'C';
-    } else if(moveToInternal[INT_COL] == 3){
-        moveToExternal[EXT_COL] = 'D';
-    } else if(moveToInternal[INT_COL] == 4){
-        moveToExternal[EXT_COL] = 'E';
-    } else if(moveToInternal[INT_COL] == 5){
-        moveToExternal[EXT_COL] = 'F';
-    } else if(moveToInternal[INT_COL] == 6){
-        moveToExternal[EXT_COL] = 'G';
+        if(convFrom[INT_COL] == 0){
+            convTo[EXT_COL] = 'A';
+        } else if(convFrom[INT_COL] == 1){
+            convTo[EXT_COL] = 'B';
+        } else if(convFrom[INT_COL] == 2){
+            convTo[EXT_COL] = 'C';
+        } else if(convFrom[INT_COL] == 3){
+            convTo[EXT_COL] = 'D';
+        } else if(convFrom[INT_COL] == 4){
+            convTo[EXT_COL] = 'E';
+        } else if(convFrom[INT_COL] == 5){
+            convTo[EXT_COL] = 'F';
+        } else if(convFrom[INT_COL] == 6){
+            convTo[EXT_COL] = 'G';
+        }
     }
 }
 
