@@ -1,4 +1,5 @@
 #include <iostream>
+#include <vector>
 
 using namespace std;
 
@@ -34,6 +35,9 @@ using namespace std;
 #define H_D 7
 #define H_X 8
 
+#define HUM_T_FIGHTER_HOR_MOVE 0
+#define COM_T_FIGHTER_HOR_MOVE 0
+
 int board[7][7];
 char board_labels[] = {'-', 'T', '~', '*', 'X', 't', '+', '@', 'x'};
 int moveFromI[2];
@@ -42,6 +46,9 @@ char moveFromExternal[2];
 char moveToExternal[2];
 
 int MAXDEPTH = 49;
+
+vector<int[4]> allHumanMoves;
+vector<int[4]> allComMoves;
 
 
 void makeMove();
@@ -63,9 +70,13 @@ void convertMoveExternalRep();
 
 bool isMoveLegal();
 
+void generateAllMoves();
+
 int main() {
     setupBoard();
     printBoard();
+    generateAllMoves();
+    cout << "The number of moves is: " << allComMoves.size();
 
 
 
@@ -271,7 +282,7 @@ void convertMoveExternalRep(){
     }
 }
 
-bool isMoveBeyondBoundaries(int *move) {
+bool isMoveBeyondBoundaries(int move[]) {
     return move[ROW] > (BRD_LENGTH - 1) ||
            move[ROW] < 0 ||
            move[COL] > (BRD_LENGTH - 1) ||
@@ -297,77 +308,174 @@ bool isMoveLegal(){
     return true;
 }
 
-bool collidesWithComFigures(int *move){
+bool collidesWithComFigures(int move[]){
     return board[move[ROW]][move[COL]] == C_T ||
            board[move[ROW]][move[COL]] == C_W ||
            board[move[ROW]][move[COL]] == C_X ||
            board[move[ROW]][move[COL]] == C_D ;
 }
 
-bool collidesWithHumFigures(int *move){
+bool collidesWithHumFigures(int move[]){
     return board[move[ROW]][move[COL]] == H_T ||
            board[move[ROW]][move[COL]] == H_W ||
            board[move[ROW]][move[COL]] == H_X ||
            board[move[ROW]][move[COL]] == H_D ;
 }
 
-bool collidesWithBeatableHumFig(int *move){
+bool collidesWithBeatableHumFig(int move[]){
     return board[move[ROW]][move[COL]] == H_T ||
            board[move[ROW]][move[COL]] == H_X;
 }
 
-bool collidesWithHumDeath(int *move){
+bool collidesWithHumDeath(int move[]){
     return board[move[ROW]][move[COL]] == H_D;
 }
 
-void moveCompTLeft(int *move){
+bool emptySpot(int move[]){
+    return board[move[ROW]][move[COL]] == EMPTY;
+}
+
+bool lastHumMoveWasTHor(void){
+    return HUM_T_FIGHTER_HOR_MOVE;
+}
+
+bool lastComMoveWasTHor(void){
+    return COM_T_FIGHTER_HOR_MOVE;
+}
+
+void moveCompTLeft(int move[]){
     if(isMoveBeyondBoundaries(move) || collidesWithComFigures(move))
         return;
     if(collidesWithBeatableHumFig(move)){
-        //add current move to the database
+        allComMoves.push_back({move[0],move[1], move[2], move[3]});
         return;
     }
-    //add current move to the database
-    move[COL]--; moveCompTLeft(move);
+    if(emptySpot(move)) {
+        //add current move to the database
+        move[COL]--;
+        moveCompTLeft(move);
+        move[COL]++;
+    }
+    return; //it's run into unbeatable hum figures
 }
-void moveCompTRight(int *move){
+void moveCompTRight(int move[]){
     if(isMoveBeyondBoundaries(move) || collidesWithComFigures(move))
         return;
     if(collidesWithBeatableHumFig(move)){
-        //add current move to the database
+        allComMoves.push_back({move[0],move[1], move[2], move[3]});
         return;
     }
-    //add current move to the database
-    move[COL]++; moveCompTRight(move);
+    if(emptySpot(move)) {
+        allComMoves.push_back({move[0],move[1], move[2], move[3]});
+        move[COL]++; moveCompTRight(move); move[COL]--;
+    }
+    return; //it's run into unbeatable hum figures
 }
-void moveCompTUp(int *move){
+void moveCompTUp(int move[]){
     if(isMoveBeyondBoundaries(move) || collidesWithComFigures(move))
         return;
 
     if(collidesWithHumDeath(move) || collidesWithBeatableHumFig(move)){
-        //add current move to the database
+        allComMoves.push_back({move[0],move[1], move[2], move[3]});
         return;
     }
-    move[ROW]--; moveCompTUp(move);
+    move[ROW]--; moveCompTUp(move); move[ROW]++;
+    return;
 }
-void moveCompTDown(int *move){
+void moveCompTDown(int move[]){
     if(isMoveBeyondBoundaries(move) || collidesWithComFigures(move))
         return;
     if(collidesWithBeatableHumFig(move)){
-        //add current move to the database
+        allComMoves.push_back({move[0],move[1], move[2], move[3]});
         return;
     }
-    //add current the move to the database
-    move[ROW]++ ; moveCompTDown(move);
+    if(emptySpot(move)) {
+        allComMoves.push_back({move[0],move[1], move[2], move[3]});
+        move[ROW]++; moveCompTDown(move); move[ROW]--;
+    }
+    return; //return if it's run into a DEATH STAR
 }
 
-void findAllMovesForCompT(int *move){
-    moveCompTLeft(move);
-    moveCompTRight(move);
-    moveCompTUp(move);
-    moveCompTDown(move);
+void findAllMovesForCompT(int move[]){
+    //TODO: get rid of the bug
+    if(!lastComMoveWasTHor()) {
+        move[COL]--; moveCompTLeft(move);
+        move[COL]++; moveCompTRight(move);
+    }
+    move[ROW]--; moveCompTUp(move);
+    move[ROW]++; moveCompTDown(move);
 }
 
+void moveCompXDownLeft(int move[]){
+    if(isMoveBeyondBoundaries(move) || collidesWithComFigures(move))
+        return;
+    if(collidesWithBeatableHumFig(move)) {
+        allComMoves.push_back({move[0],move[1], move[2], move[3]});
+        return;
+    }
+    if(emptySpot(move)){
+        allComMoves.push_back({move[0],move[1], move[2], move[3]});
+        move[ROW]++; move[COL]--; moveCompXDownLeft(move);  move[ROW]--; move[COL]++;
+        return;
+    }
+}
+
+void moveCompXDownRight(int move[]){
+    if(isMoveBeyondBoundaries(move) || collidesWithComFigures(move)){
+        return;
+    }
+    if(collidesWithBeatableHumFig(move)){
+        allComMoves.push_back({move[0],move[1], move[2], move[3]});
+        return;
+    }
+    if(emptySpot(move)){
+        allComMoves.push_back({move[0],move[1], move[2], move[3]});
+        move[ROW]++; move[COL]++; moveCompXDownRight(move);  move[ROW]--; move[COL]--;
+        return;
+    }
+}
+
+void moveCompXUpLeft(int move[]){
+    if(isMoveBeyondBoundaries(move) || collidesWithComFigures(move))
+        return;
+    if(collidesWithBeatableHumFig(move)) {
+        allComMoves.push_back({move[0],move[1], move[2], move[3]});
+        return;
+    }
+    if(emptySpot(move)){
+        move[ROW]--; move[COL]--; moveCompXUpLeft(move); move[ROW]++; move[COL]++;
+        return;
+    }
+    if(collidesWithHumDeath(move)){
+        allComMoves.push_back({move[0],move[1], move[2], move[3]});
+        return;
+    }
+}
+
+void moveCompXUpRight(int move[]){
+    if(isMoveBeyondBoundaries(move) || collidesWithComFigures(move))
+        return;
+    if(collidesWithBeatableHumFig(move)) {
+        allComMoves.push_back({move[0],move[1], move[2], move[3]});
+        return;
+    }
+    if(emptySpot(move)){
+        move[ROW]--; move[COL]++; moveCompXUpRight(move); move[ROW]++; move[COL]--;
+        return;
+    }
+    if(collidesWithHumDeath(move)){
+        allComMoves.push_back({move[0],move[1], move[2], move[3]});
+        return;
+    }
+}
+
+void findAllMovesForCompX(int move[]){
+    //TODO: add++, -- and get rid of the bug
+    moveCompXDownLeft(move);
+    moveCompXDownRight(move);
+    moveCompXUpLeft(move);
+    moveCompXUpRight(move);
+}
 
 void generateAllMoves(){
     int move[2];
@@ -382,6 +490,8 @@ void generateAllMoves(){
 
                     if(board[i][j] == board_labels[C_T]){
                         findAllMovesForCompT(move);
+                    } else if(board[i][j] == board_labels[C_X]){
+                        findAllMovesForCompX(move);
                     }
             }
         }
