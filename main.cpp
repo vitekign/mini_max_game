@@ -20,8 +20,8 @@ using namespace std;
 #define INT_COL 1
 #define EXT_COL 0
 
-#define ROW 0
-#define COL 1
+#define ROW 2
+#define COL 3
 
 /* BOARD */
 #define BRD_LENGTH  7
@@ -236,6 +236,55 @@ void convertMoveToInternalRep(char *move){
     }
 }
 
+char* convertMoveExternalRep(int *move){
+    char *returnValue = new char[5];
+    for(int i = 0; i < 2; i++){
+        int  *convFrom;
+        char *convTo;
+        if(i == 0){
+            convFrom = move;
+            convTo = returnValue;
+        } else {
+            convFrom = move+2;
+            convTo = returnValue+2;
+        }
+        if(convFrom[INT_ROW] == 0){
+            convTo[EXT_ROW] = '7';
+        } else if(convFrom[INT_ROW] == 1){
+            convTo[EXT_ROW] = '6';
+        } else if(convFrom[INT_ROW] == 2){
+            convTo[EXT_ROW] = '5';
+        } else if(convFrom[INT_ROW] == 3){
+            convTo[EXT_ROW] = '4';
+        } else if(convFrom[INT_ROW] == 4){
+            convTo[EXT_ROW] = '3';
+        } else if(convFrom[INT_ROW] == 5){
+            convTo[EXT_ROW] = '2';
+        } else if(convFrom[INT_ROW] == 6){
+            convTo[EXT_ROW] = '1';
+        }
+
+
+        if(convFrom[INT_COL] == 0){
+            convTo[EXT_COL] = 'A';
+        } else if(convFrom[INT_COL] == 1){
+            convTo[EXT_COL] = 'B';
+        } else if(convFrom[INT_COL] == 2){
+            convTo[EXT_COL] = 'C';
+        } else if(convFrom[INT_COL] == 3){
+            convTo[EXT_COL] = 'D';
+        } else if(convFrom[INT_COL] == 4){
+            convTo[EXT_COL] = 'E';
+        } else if(convFrom[INT_COL] == 5){
+            convTo[EXT_COL] = 'F';
+        } else if(convFrom[INT_COL] == 6){
+            convTo[EXT_COL] = 'G';
+        }
+    }
+    returnValue[4] ='\0';
+    return returnValue;
+}
+
 void convertMoveExternalRep(){
     for(int i = 0; i < 2; i++){
         int const *convFrom;
@@ -345,8 +394,8 @@ bool lastComMoveWasTHor(void){
 
 void addToTheDatabase(int *move){
 
-
-    cout << '[' << move[0] << move[1] <<']' << " ";
+   // cout << "[" << move[0] << move[1] <<"]:[" << move[2] << move[3] <<"]" << " ";
+    cout << convertMoveExternalRep(move) << "..";
 }
 
 void moveCompTLeft(int move[]){
@@ -442,25 +491,28 @@ void moveCompXDownRight(int move[]){
 }
 
 void moveCompXUpLeft(int move[]){
-    if(isMoveBeyondBoundaries(move) || collidesWithComFigures(move))
+    if(isMoveBeyondBoundaries(move) || collidesWithComFigures(move)) {
         return;
+    }
     if(collidesWithBeatableHumFig(move)) {
         addToTheDatabase(move);
         return;
     }
     if(emptySpot(move)){
-        addToTheDatabase(move);
+        move[ROW]--; move[COL]--; moveCompXUpLeft(move); move[ROW]++; move[COL]++;
         return;
     }
     if(collidesWithHumDeath(move)){
        addToTheDatabase(move);
         return;
     }
+    return;
 }
 
 void moveCompXUpRight(int move[]){
-    if(isMoveBeyondBoundaries(move) || collidesWithComFigures(move))
+    if(isMoveBeyondBoundaries(move) || collidesWithComFigures(move)) {
         return;
+    }
     if(collidesWithBeatableHumFig(move)) {
         addToTheDatabase(move);
         return;
@@ -473,20 +525,21 @@ void moveCompXUpRight(int move[]){
         addToTheDatabase(move);
         return;
     }
+    return;
 }
 
 void findAllMovesForCompX(int move[]){
-    //TODO: add++, -- and get rid of the bug
-    moveCompXDownLeft(move);
-    moveCompXDownRight(move);
-    moveCompXUpLeft(move);
-    moveCompXUpRight(move);
+    move[COL]--; move[ROW]++; moveCompXDownLeft(move);  move[COL]++; move[ROW]--;
+    move[COL]++; move[ROW]++; moveCompXDownRight(move);  move[COL]--; move[ROW]--;
+    move[COL]--; move[ROW]--; moveCompXUpLeft(move);  move[COL]++; move[ROW]++;
+    move[COL]++; move[ROW]--; moveCompXUpRight(move);  move[COL]--; move[ROW]++;
 }
 
 void generateAllMoves(){
     cout << "Start to generate all moves..." << endl;
     int move[4];
     for(int i = 0; i < BRD_LENGTH; i++){
+        cout << endl;
         for(int j = 0; j < BRD_LENGTH; j++){
             if(board[i][j] != C_W &&
                board[i][j] != C_D &&
@@ -495,13 +548,13 @@ void generateAllMoves(){
                     move[0] = i;
                     move[1] = j;
                     if(board[i][j] == C_T){
-//                        move[2] = i;
-//                        move[3] = j;
+                        move[2] = i;
+                        move[3] = j;
                         findAllMovesForCompT(move);
 
                     } else if(board[i][j] == C_X){
-//                        move[2] = i;
-//                        move[3] = j;
+                        move[2] = i;
+                        move[3] = j;
                         findAllMovesForCompX(move);
                     }
             }
