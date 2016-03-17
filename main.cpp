@@ -499,7 +499,7 @@ void moveCompXUpLeft(int move[]){
         return;
     }
     if(emptySpot(move)){
-        move[ROW]--; move[COL]--; moveCompXUpLeft(move); move[ROW]++; move[COL]++;
+        addToTheDatabase(move);
         return;
     }
     if(collidesWithHumDeath(move)){
@@ -548,13 +548,15 @@ void generateAllMoves(){
                     move[0] = i;
                     move[1] = j;
                     if(board[i][j] == C_T){
+
                         move[2] = i;
                         move[3] = j;
                         findAllMovesForCompT(move);
 
-                    } else if(board[i][j] == C_X){
+                    } else if(board[i][j] == C_X) {
                         move[2] = i;
                         move[3] = j;
+
                         findAllMovesForCompX(move);
                     }
             }
