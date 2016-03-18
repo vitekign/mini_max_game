@@ -1,13 +1,13 @@
 #include <iostream>
 #include <vector>
-
+#include <algorithm>
 using namespace std;
 
 
 #define RUN_TEST 0
 
-#define H 2
-#define C 1
+#define H_MOVE 2
+#define C_MOVE 1
 #define EMPTY 0
 #define FULL 1
 #define C_WINS 5000
@@ -38,17 +38,34 @@ using namespace std;
 #define HUM_T_FIGHTER_HOR_MOVE 0
 #define COM_T_FIGHTER_HOR_MOVE 0
 
+#define DATABASE_DEPTH 200
+#define DATABASE_WIDTH 6
+
+enum MOVE{
+    MOVE_FROM_ROW,
+    MOVE_FROM_COL,
+    MOVE_TO_ROW,
+    MOVE_TO_COL,
+    MOVE_FIG_TYPE,
+    MOVE_WHOSE_MOVE,
+};
+enum TURN{
+    COM_TURN,
+    HUM_TURN,
+};
+
 int board[7][7];
 char board_labels[] = {'-', 'T', '~', '*', 'X', 't', '+', '@', 'x'};
 int moveFromI[2];
 int moveToI[2];
 char moveFromExternal[2];
 char moveToExternal[2];
+int allMoves[DATABASE_DEPTH][DATABASE_WIDTH];
+int allCompMoves[DATABASE_DEPTH][DATABASE_WIDTH];
+int allHumanMoves[DATABASE_DEPTH][DATABASE_WIDTH];
 
 int MAXDEPTH = 49;
-
-vector<int> allHumanMoves;
-vector<int> allComMoves;
+int INDEX = 0;
 
 
 void makeMove();
@@ -76,11 +93,15 @@ void findAllMovesForHumX(int move[]);
 
 void findAllMovesForHumT(int move[]);
 
+void showAllMoves(void);
+
+bool endOfMoveList(const int *list);
+
 int main() {
     setupBoard();
     printBoard();
     generateAllMoves();
-
+    showAllMoves();
 
 
 
@@ -355,7 +376,6 @@ bool isMoveBeyondBoundaries() {
 
 bool isMoveLegal(){
     !isMoveBeyondBoundaries();
-
 }
 
 bool collidesWithComFigures(int move[]){
@@ -403,23 +423,99 @@ bool lastComMoveWasTHor(void){
 }
 
 
-void addToTheDatabase(int *move){
-
-   // cout << "[" << move[0] << move[1] <<"]:[" << move[2] << move[3] <<"]" << " ";
-    cout << convertMoveExternalRep(move) << "..";
+bool endOfMoveList(int const *list){
+    return (list[0] == -1 && list[1] == -1 &&
+       list[2] == -1 && list[3] == -1);
 }
 
+bool compWins(){
+    int counter = 0;
+    while(true){
+        if(endOfMoveList(allCompMoves[counter])) break;
+        if(endOfMoveList(allHumanMoves[0])){
+            return true;
+        } else if(board[allCompMoves[counter][MOVE_TO_ROW]][allMoves[counter][MOVE_TO_COL]] == H_D){
+            return true;
+        }
+        counter++;
+    }
+    return false;
+}
+
+bool humWins(){
+    int counter = 0;
+    while(true){
+        if(endOfMoveList(allHumanMoves[counter])) break;
+        if(endOfMoveList(allCompMoves[0])){
+            return true;
+        } else if(board[allHumanMoves[counter][MOVE_TO_ROW]][allHumanMoves[counter][MOVE_TO_COL]] == C_D){
+            return true;
+        }
+        counter++;
+    }
+    return false;
+}
+
+void showAllMoves(void){
+    int counter = 0;
+    int TURN = allMoves[counter][MOVE_FIG_TYPE];
+    while(true){
+        cout << convertMoveExternalRep(allMoves[counter]);
+        cout << "..";
+        counter++;
+        if (endOfMoveList(allMoves[counter])) break;
+
+        if(allMoves[counter][MOVE_FIG_TYPE] != TURN){
+            cout << endl;
+            TURN = allMoves[counter][MOVE_FIG_TYPE];
+        }
+    }
+    return;
+}
+
+void addToDatabase(int *move) {
+    memcpy(&allMoves[INDEX], move, sizeof(allMoves[0][0]) * 4);
+    if (board[allMoves[INDEX][MOVE_FROM_ROW]][allMoves[INDEX][MOVE_FROM_COL]] == ( H_T || H_X)) {
+        allMoves[INDEX][MOVE_WHOSE_MOVE] = HUM_TURN;
+    }
+    if (board[allMoves[INDEX][MOVE_FROM_ROW]][allMoves[INDEX][MOVE_FROM_COL]] == H_T) {
+        allMoves[INDEX][MOVE_FIG_TYPE] = H_T;
+    }
+    if (board[allMoves[INDEX][MOVE_FROM_ROW]][allMoves[INDEX][MOVE_FROM_COL]] == H_X) {
+        allMoves[INDEX][MOVE_FIG_TYPE] = H_X;
+    }
+    // TODO: add 'else' here after you mini-max working
+    if (board[allMoves[INDEX][MOVE_FROM_ROW]][allMoves[INDEX][MOVE_FROM_COL]] == (C_T || C_X)) {
+            allMoves[INDEX][MOVE_WHOSE_MOVE] = COM_TURN;
+            }
+            if (board[allMoves[INDEX][MOVE_FROM_ROW]][allMoves[INDEX][MOVE_FROM_COL]] == C_T) {
+                allMoves[INDEX][MOVE_FIG_TYPE] = C_T;
+            }
+            if (board[allMoves[INDEX][MOVE_FROM_ROW]][allMoves[INDEX][MOVE_FROM_COL]] == C_X) {
+                allMoves[INDEX][MOVE_FIG_TYPE] = C_X;
+            }
+
+    if(allMoves[INDEX][MOVE_WHOSE_MOVE] == HUM_TURN){
+        memcpy(&allCompMoves[INDEX], move, sizeof(allCompMoves[0][0]) * 4);
+    } else if(allMoves[INDEX][MOVE_WHOSE_MOVE] == COM_TURN){
+        memcpy(&allHumanMoves[INDEX], move, sizeof(allHumanMoves[0][0]) * 4);
+    }
+    INDEX++;
+}
+
+/************************************/
 /*      Find computer's moves       */
+/************************************/
 
 void moveCompTLeft(int move[]){
     if(isMoveBeyondBoundaries(move) || collidesWithComFigures(move))
         return;
     if(collidesWithBeatableHumFig(move)){
-        addToTheDatabase(move);
+        addToDatabase(move);
         return;
     }
     if(emptySpot(move)) {
-        addToTheDatabase(move);
+        addToDatabase(move);
         move[COL]--;
         moveCompTLeft(move);
         move[COL]++;
@@ -430,11 +526,11 @@ void moveCompTRight(int move[]){
     if(isMoveBeyondBoundaries(move) || collidesWithComFigures(move))
         return;
     if(collidesWithBeatableHumFig(move)){
-        addToTheDatabase(move);
+        addToDatabase(move);
         return;
     }
     if(emptySpot(move)) {
-        addToTheDatabase(move);
+        addToDatabase(move);
         move[COL]++; moveCompTRight(move); move[COL]--;
     }
     return; //it's run into unbeatable hum figures
@@ -444,7 +540,7 @@ void moveCompTUp(int move[]){
         return;
 
     if(collidesWithHumDeath(move) || collidesWithBeatableHumFig(move)){
-        addToTheDatabase(move);
+        addToDatabase(move);
         return;
     }
     move[ROW]--; moveCompTUp(move); move[ROW]++;
@@ -454,11 +550,11 @@ void moveCompTDown(int move[]){
     if(isMoveBeyondBoundaries(move) || collidesWithComFigures(move))
         return;
     if(collidesWithBeatableHumFig(move)){
-        addToTheDatabase(move);
+        addToDatabase(move);
         return;
     }
     if(emptySpot(move)) {
-        addToTheDatabase(move);
+        addToDatabase(move);
         move[ROW]++; moveCompTDown(move); move[ROW]--;
     }
     return; //return if it's run into a DEATH STAR
@@ -477,11 +573,11 @@ void moveCompXDownLeft(int move[]){
     if(isMoveBeyondBoundaries(move) || collidesWithComFigures(move))
         return;
     if(collidesWithBeatableHumFig(move)) {
-        addToTheDatabase(move);
+        addToDatabase(move);
         return;
     }
     if(emptySpot(move)){
-        addToTheDatabase(move);
+        addToDatabase(move);
         move[ROW]++; move[COL]--; moveCompXDownLeft(move);  move[ROW]--; move[COL]++;
         return;
     }
@@ -492,11 +588,11 @@ void moveCompXDownRight(int move[]){
         return;
     }
     if(collidesWithBeatableHumFig(move)){
-        addToTheDatabase(move);
+        addToDatabase(move);
         return;
     }
     if(emptySpot(move)){
-        addToTheDatabase(move);
+        addToDatabase(move);
         move[ROW]++; move[COL]++; moveCompXDownRight(move);  move[ROW]--; move[COL]--;
         return;
     }
@@ -507,7 +603,7 @@ void moveCompXUpLeft(int move[]){
         return;
     }
     if(collidesWithBeatableHumFig(move)) {
-        addToTheDatabase(move);
+        addToDatabase(move);
         return;
     }
     if(emptySpot(move)){
@@ -515,7 +611,7 @@ void moveCompXUpLeft(int move[]){
         return;
     }
     if(collidesWithHumDeath(move)){
-       addToTheDatabase(move);
+        addToDatabase(move);
         return;
     }
     return;
@@ -526,7 +622,7 @@ void moveCompXUpRight(int move[]){
         return;
     }
     if(collidesWithBeatableHumFig(move)) {
-        addToTheDatabase(move);
+        addToDatabase(move);
         return;
     }
     if(emptySpot(move)){
@@ -534,7 +630,7 @@ void moveCompXUpRight(int move[]){
         return;
     }
     if(collidesWithHumDeath(move)){
-        addToTheDatabase(move);
+        addToDatabase(move);
         return;
     }
     return;
@@ -548,10 +644,11 @@ void findAllMovesForCompX(int move[]){
 }
 
 void generateAllMoves(){
-    cout << "Start to generate all moves..." << endl;
+    memset(allMoves, -1, sizeof(allMoves[0][0]) * 200 * 4);
+    INDEX = 0;
+    cout << "Generate all moves..." << endl << endl;
     int move[4];
     for(int i = 0; i < BRD_LENGTH; i++){
-        (i == 0 || i == 2 || i == 4 || i == 5) ? (cout << endl) : (cout << "");
         for(int j = 0; j < BRD_LENGTH; j++){
             if(board[i][j] != C_W &&
                board[i][j] != C_D &&
@@ -559,26 +656,15 @@ void generateAllMoves(){
                board[i][j] != H_D){
                     move[0] = i;
                     move[1] = j;
+                    move[2] = i;
+                    move[3] = j;
                     if(board[i][j] == C_T){
-
-                        move[2] = i;
-                        move[3] = j;
                         findAllMovesForCompT(move);
-
                     } else if(board[i][j] == C_X) {
-                        move[2] = i;
-                        move[3] = j;
-
                         findAllMovesForCompX(move);
                     } else if(board[i][j] == H_X){
-                        move[2] = i;
-                        move[3] = j;
-
                         findAllMovesForHumX(move);
                     } else if(board[i][j] == H_T){
-                        move[2] = i;
-                        move[3] = j;
-
                         findAllMovesForHumT(move);
                     }
             }
@@ -590,11 +676,11 @@ void moveHumXUpLeft(int move[]){
     if(isMoveBeyondBoundaries(move) || collidesWithComFigures(move))
         return;
     if(collidesWithBeatableComFig(move)) {
-        addToTheDatabase(move);
+        addToDatabase(move);
         return;
     }
     if(emptySpot(move)){
-        addToTheDatabase(move);
+        addToDatabase(move);
         move[ROW]--; move[COL]--; moveHumXUpLeft(move);  move[ROW]++; move[COL]++;
         return;
     }
@@ -605,11 +691,11 @@ void moveHumXUpRight(int move[]){
         return;
     }
     if(collidesWithBeatableComFig(move)){
-        addToTheDatabase(move);
+        addToDatabase(move);
         return;
     }
     if(emptySpot(move)){
-        addToTheDatabase(move);
+        addToDatabase(move);
         move[ROW]--; move[COL]++; moveHumXUpRight(move);  move[ROW]++; move[COL]--;
         return;
     }
@@ -620,7 +706,7 @@ void moveHumXDownLeft(int move[]){
         return;
     }
     if(collidesWithBeatableComFig(move)) {
-        addToTheDatabase(move);
+        addToDatabase(move);
         return;
     }
     if(emptySpot(move)){
@@ -628,7 +714,7 @@ void moveHumXDownLeft(int move[]){
         return;
     }
     if(collidesWithComDeath(move)){
-        addToTheDatabase(move);
+        addToDatabase(move);
         return;
     }
     return;
@@ -639,7 +725,7 @@ void moveHumXDownRight(int move[]){
         return;
     }
     if(collidesWithBeatableHumFig(move)) {
-        addToTheDatabase(move);
+        addToDatabase(move);
         return;
     }
     if(emptySpot(move)){
@@ -647,7 +733,7 @@ void moveHumXDownRight(int move[]){
         return;
     }
     if(collidesWithComDeath(move)){
-        addToTheDatabase(move);
+        addToDatabase(move);
         return;
     }
     return;
@@ -666,11 +752,11 @@ void moveHumTLeft(int move[]){
     if(isMoveBeyondBoundaries(move) || collidesWithHumFigures(move))
         return;
     if(collidesWithBeatableComFig(move)){
-        addToTheDatabase(move);
+        addToDatabase(move);
         return;
     }
     if(emptySpot(move)) {
-        addToTheDatabase(move);
+        addToDatabase(move);
         move[COL]--; moveHumTLeft(move); move[COL]++;
     }
     return; //it's run into unbeatable hum figures
@@ -679,11 +765,11 @@ void moveHumTRight(int move[]){
     if(isMoveBeyondBoundaries(move) || collidesWithHumFigures(move))
         return;
     if(collidesWithBeatableComFig(move)){
-        addToTheDatabase(move);
+        addToDatabase(move);
         return;
     }
     if(emptySpot(move)) {
-        addToTheDatabase(move);
+        addToDatabase(move);
         move[COL]++; moveHumTRight(move); move[COL]--;
     }
     return; //it's run into unbeatable hum figures
@@ -693,7 +779,7 @@ void moveHumTDown(int move[]){
         return;
 
     if(collidesWithComDeath(move) || collidesWithBeatableComFig(move)){
-        addToTheDatabase(move);
+        addToDatabase(move);
         return;
     }
     move[ROW]--; moveHumTDown(move); move[ROW]++;
@@ -703,11 +789,11 @@ void moveHumTUp(int move[]){
     if(isMoveBeyondBoundaries(move) || collidesWithHumFigures(move))
         return;
     if(collidesWithBeatableComFig(move)){
-        addToTheDatabase(move);
+        addToDatabase(move);
         return;
     }
     if(emptySpot(move)) {
-        addToTheDatabase(move);
+        addToDatabase(move);
         move[ROW]++; moveHumTUp(move); move[ROW]--;
     }
     return; //return if it's run into a DEATH STAR
@@ -732,7 +818,7 @@ void getAMove(){
     int j;
     cout << "Enter your move: " ;
     cin >> i >> j;
-    board[i][j] = H;
+    board[i][j] = H_MOVE;
 }
 
 void checkGameOver(){
@@ -756,7 +842,7 @@ void makeMove(){
     for(int i = 0; i < 3; i++){
         for(int j = 0; j < 3; j++){
             if(board[i][j] == EMPTY){
-                board[i][j] = C; //make move board
+                board[i][j] = C_MOVE; //make move board
                 score = min(depth+1);
                 if(score > best){
                     mi = i;
@@ -768,7 +854,7 @@ void makeMove(){
         }
     }
     cout << "my move is" << mi << " " << mj << endl;
-    board[mi][mj] = C;
+    board[mi][mj] = C_MOVE;
 }
 
 int min(int depth){
@@ -779,7 +865,7 @@ int min(int depth){
     for(int i = 0; i < 3; i++){
         for(int j = 0; j < 3; j++){
             if(board[i][j] == EMPTY){
-                board[i][j] = H; //make move on board
+                board[i][j] = H_MOVE; //make move on board
                 score = max(depth+1);
                 if(score < best) best = score;
                 board[i][j] = EMPTY; // undo move
@@ -797,7 +883,7 @@ int max(int depth){
     for(int i = 0; i < 3; i++){
         for (int j = 0; j < 3; j++){
             if(board[i][j] == EMPTY){
-                board[i][j] = C; //make move on board
+                board[i][j] = C_MOVE; //make move on board
                 score = min(depth + 1);
                 if(score > best) best = score;
                 board[i][j] = EMPTY; //undo move
@@ -808,23 +894,23 @@ int max(int depth){
 }
 
 int checkForWinner(){
-    if ((board[0][0] == C ) && (board[0][1] == C ) && (board[0][2] == C )
-        || (board[1][0] == C ) && (board[1][1] == C ) && (board[1][2] == C )
-        || (board[2][0] == C ) && (board[2][1] == C ) && (board[2][2] == C )
-        || (board[0][0] == C ) && (board[1][0] == C ) && (board[2][0] == C )
-        || (board[0][1] == C ) && (board[1][1] == C ) && (board[2][1] == C )
-        || (board[0][2] == C ) && (board[1][2] == C ) && (board[2][2] == C )
-        || (board[0][0] == C ) && (board[1][1] == C ) && (board[2][2] == C )
-        || (board[0][2] == C ) && (board[1][1] == C ) && (board[2][0] == C ))
+    if ((board[0][0] == C_MOVE ) && (board[0][1] == C_MOVE ) && (board[0][2] == C_MOVE )
+        || (board[1][0] == C_MOVE ) && (board[1][1] == C_MOVE ) && (board[1][2] == C_MOVE )
+        || (board[2][0] == C_MOVE ) && (board[2][1] == C_MOVE ) && (board[2][2] == C_MOVE )
+        || (board[0][0] == C_MOVE ) && (board[1][0] == C_MOVE ) && (board[2][0] == C_MOVE )
+        || (board[0][1] == C_MOVE ) && (board[1][1] == C_MOVE ) && (board[2][1] == C_MOVE )
+        || (board[0][2] == C_MOVE ) && (board[1][2] == C_MOVE ) && (board[2][2] == C_MOVE )
+        || (board[0][0] == C_MOVE ) && (board[1][1] == C_MOVE ) && (board[2][2] == C_MOVE )
+        || (board[0][2] == C_MOVE ) && (board[1][1] == C_MOVE ) && (board[2][0] == C_MOVE ))
         return C_WINS; //computer wins 5000
-    if ((board[0][0] == H ) && (board[0][1] == H ) && (board[0][2] == H )
-        || (board[1][0] == H ) && (board[1][1] == H ) && (board[1][2] == H )
-        || (board[2][0] == H ) && (board[2][1] == H ) && (board[2][2] == H )
-        || (board[0][0] == H ) && (board[1][0] == H ) && (board[2][0] == H )
-        || (board[0][1] == H ) && (board[1][1] == H ) && (board[2][1] == H )
-        || (board[0][2] == H ) && (board[1][2] == H ) && (board[2][2] == H )
-        || (board[0][0] == H ) && (board[1][1] == H ) && (board[2][2] == H )
-        || (board[0][2] == H ) && (board[1][1] == H ) && (board[2][0] == H ))
+    if ((board[0][0] == H_MOVE ) && (board[0][1] == H_MOVE ) && (board[0][2] == H_MOVE )
+        || (board[1][0] == H_MOVE ) && (board[1][1] == H_MOVE ) && (board[1][2] == H_MOVE )
+        || (board[2][0] == H_MOVE ) && (board[2][1] == H_MOVE ) && (board[2][2] == H_MOVE )
+        || (board[0][0] == H_MOVE ) && (board[1][0] == H_MOVE ) && (board[2][0] == H_MOVE )
+        || (board[0][1] == H_MOVE ) && (board[1][1] == H_MOVE ) && (board[2][1] == H_MOVE )
+        || (board[0][2] == H_MOVE ) && (board[1][2] == H_MOVE ) && (board[2][2] == H_MOVE )
+        || (board[0][0] == H_MOVE ) && (board[1][1] == H_MOVE ) && (board[2][2] == H_MOVE )
+        || (board[0][2] == H_MOVE ) && (board[1][1] == H_MOVE ) && (board[2][0] == H_MOVE ))
         return H_WINS; //human wins -5000
 
     for(int i = 0; i < 3; i++){
