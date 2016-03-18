@@ -72,6 +72,10 @@ bool isMoveLegal();
 
 void generateAllMoves();
 
+void findAllMovesForHumX(int move[]);
+
+void findAllMovesForHumT(int move[]);
+
 int main() {
     setupBoard();
     printBoard();
@@ -350,11 +354,8 @@ bool isMoveBeyondBoundaries() {
 }
 
 bool isMoveLegal(){
-    if(isMoveBeyondBoundaries())
-        return false;
+    !isMoveBeyondBoundaries();
 
-
-    return true;
 }
 
 bool collidesWithComFigures(int move[]){
@@ -376,8 +377,17 @@ bool collidesWithBeatableHumFig(int move[]){
            board[move[ROW]][move[COL]] == H_X;
 }
 
+bool collidesWithBeatableComFig(int *move){
+    return board[move[ROW]][move[COL]] == C_T ||
+           board[move[ROW]][move[COL]] == H_X;
+}
+
 bool collidesWithHumDeath(int move[]){
     return board[move[ROW]][move[COL]] == H_D;
+}
+
+bool collidesWithComDeath(int *move){
+    return board[move[ROW]][move[COL]] == C_D;
 }
 
 bool emptySpot(int move[]){
@@ -392,11 +402,14 @@ bool lastComMoveWasTHor(void){
     return COM_T_FIGHTER_HOR_MOVE;
 }
 
+
 void addToTheDatabase(int *move){
 
    // cout << "[" << move[0] << move[1] <<"]:[" << move[2] << move[3] <<"]" << " ";
     cout << convertMoveExternalRep(move) << "..";
 }
+
+/*      Find computer's moves       */
 
 void moveCompTLeft(int move[]){
     if(isMoveBeyondBoundaries(move) || collidesWithComFigures(move))
@@ -452,7 +465,6 @@ void moveCompTDown(int move[]){
 }
 
 void findAllMovesForCompT(int move[]){
-    //TODO: get rid of the bug
     if(!lastComMoveWasTHor()) {
         move[COL]--; moveCompTLeft(move); move[COL]++;
         move[COL]++; moveCompTRight(move); move[COL]--;
@@ -499,7 +511,7 @@ void moveCompXUpLeft(int move[]){
         return;
     }
     if(emptySpot(move)){
-        addToTheDatabase(move);
+        move[ROW]--; move[COL]--; moveCompXUpLeft(move); move[ROW]++; move[COL]++;
         return;
     }
     if(collidesWithHumDeath(move)){
@@ -539,7 +551,7 @@ void generateAllMoves(){
     cout << "Start to generate all moves..." << endl;
     int move[4];
     for(int i = 0; i < BRD_LENGTH; i++){
-        cout << endl;
+        (i == 0 || i == 2 || i == 4 || i == 5) ? (cout << endl) : (cout << "");
         for(int j = 0; j < BRD_LENGTH; j++){
             if(board[i][j] != C_W &&
                board[i][j] != C_D &&
@@ -558,28 +570,161 @@ void generateAllMoves(){
                         move[3] = j;
 
                         findAllMovesForCompX(move);
+                    } else if(board[i][j] == H_X){
+                        move[2] = i;
+                        move[3] = j;
+
+                        findAllMovesForHumX(move);
+                    } else if(board[i][j] == H_T){
+                        move[2] = i;
+                        move[3] = j;
+
+                        findAllMovesForHumT(move);
                     }
             }
         }
     }
 }
 
-    /* 1. If the move goes beyond BRD_LENGTH - 1
-     *      IT'S ILLEGAL
-     * 2. If the move has negatives
-     *      IT'S ILLEGAL
-     *
-     * a bunch of recursive functions:
-     *      up
-     *      down
-     *      left
-     *      right
-     *
-     *      up-left
-     *      up-right
-     *      down-left
-     *      down-left
-     */
+void moveHumXUpLeft(int move[]){
+    if(isMoveBeyondBoundaries(move) || collidesWithComFigures(move))
+        return;
+    if(collidesWithBeatableComFig(move)) {
+        addToTheDatabase(move);
+        return;
+    }
+    if(emptySpot(move)){
+        addToTheDatabase(move);
+        move[ROW]--; move[COL]--; moveHumXUpLeft(move);  move[ROW]++; move[COL]++;
+        return;
+    }
+}
+
+void moveHumXUpRight(int move[]){
+    if(isMoveBeyondBoundaries(move) || collidesWithComFigures(move)){
+        return;
+    }
+    if(collidesWithBeatableComFig(move)){
+        addToTheDatabase(move);
+        return;
+    }
+    if(emptySpot(move)){
+        addToTheDatabase(move);
+        move[ROW]--; move[COL]++; moveHumXUpRight(move);  move[ROW]++; move[COL]--;
+        return;
+    }
+}
+
+void moveHumXDownLeft(int move[]){
+    if(isMoveBeyondBoundaries(move) || collidesWithComFigures(move)) {
+        return;
+    }
+    if(collidesWithBeatableComFig(move)) {
+        addToTheDatabase(move);
+        return;
+    }
+    if(emptySpot(move)){
+        move[ROW]++; move[COL]--; moveHumXDownLeft(move); move[ROW]--; move[COL]++;
+        return;
+    }
+    if(collidesWithComDeath(move)){
+        addToTheDatabase(move);
+        return;
+    }
+    return;
+}
+
+void moveHumXDownRight(int move[]){
+    if(isMoveBeyondBoundaries(move) || collidesWithHumFigures(move)) {
+        return;
+    }
+    if(collidesWithBeatableHumFig(move)) {
+        addToTheDatabase(move);
+        return;
+    }
+    if(emptySpot(move)){
+        move[ROW]++; move[COL]++; moveHumXDownRight(move); move[ROW]--; move[COL]--;
+        return;
+    }
+    if(collidesWithComDeath(move)){
+        addToTheDatabase(move);
+        return;
+    }
+    return;
+}
+
+void findAllMovesForHumX(int move[]){
+    move[ROW]++; move[COL]--;  moveHumXDownLeft(move);  move[ROW]--; move[COL]++;
+    move[ROW]++; move[COL]++;  moveHumXDownRight(move); move[ROW]--; move[COL]--;
+    move[ROW]--; move[COL]--;  moveHumXUpLeft(move);  move[ROW]++; move[COL]++;
+    move[ROW]--; move[COL]++;  moveHumXUpRight(move);  move[ROW]++; move[COL]--;
+
+
+}
+
+void moveHumTLeft(int move[]){
+    if(isMoveBeyondBoundaries(move) || collidesWithHumFigures(move))
+        return;
+    if(collidesWithBeatableComFig(move)){
+        addToTheDatabase(move);
+        return;
+    }
+    if(emptySpot(move)) {
+        addToTheDatabase(move);
+        move[COL]--; moveHumTLeft(move); move[COL]++;
+    }
+    return; //it's run into unbeatable hum figures
+}
+void moveHumTRight(int move[]){
+    if(isMoveBeyondBoundaries(move) || collidesWithHumFigures(move))
+        return;
+    if(collidesWithBeatableComFig(move)){
+        addToTheDatabase(move);
+        return;
+    }
+    if(emptySpot(move)) {
+        addToTheDatabase(move);
+        move[COL]++; moveHumTRight(move); move[COL]--;
+    }
+    return; //it's run into unbeatable hum figures
+}
+void moveHumTDown(int move[]){
+    if(isMoveBeyondBoundaries(move) || collidesWithHumFigures(move))
+        return;
+
+    if(collidesWithComDeath(move) || collidesWithBeatableComFig(move)){
+        addToTheDatabase(move);
+        return;
+    }
+    move[ROW]--; moveHumTDown(move); move[ROW]++;
+    return;
+}
+void moveHumTUp(int move[]){
+    if(isMoveBeyondBoundaries(move) || collidesWithHumFigures(move))
+        return;
+    if(collidesWithBeatableComFig(move)){
+        addToTheDatabase(move);
+        return;
+    }
+    if(emptySpot(move)) {
+        addToTheDatabase(move);
+        move[ROW]++; moveHumTUp(move); move[ROW]--;
+    }
+    return; //return if it's run into a DEATH STAR
+}
+
+void findAllMovesForHumT(int move[]){
+    if(!lastHumMoveWasTHor()) {
+        move[COL]--; moveHumTLeft(move); move[COL]++;
+        move[COL]++; moveHumTRight(move); move[COL]--;
+    }
+    move[ROW]--; moveHumTUp(move); move[ROW]++;
+    move[ROW]++; moveHumTDown(move); move[ROW]--;
+}
+
+
+
+
 
 
 void getAMove(){
