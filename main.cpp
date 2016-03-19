@@ -9,11 +9,10 @@ using namespace std;
 #define H_MOVE 2
 #define C_MOVE 1
 #define EMPTY 0
-#define FULL 1
 #define C_WINS 5000
 #define H_WINS -5000
 #define DRAW 0
-#define NOT_OVER -1
+#define GAME_OVER -1
 
 #define INT_ROW 0
 #define EXT_ROW 1
@@ -54,6 +53,9 @@ enum TURN{
     HUM_TURN,
 };
 
+int NUM_HUM_MOVES;
+int NUM_COM_MOVES;
+
 int board[7][7];
 char board_labels[] = {'-', 'T', '~', '*', 'X', 't', '+', '@', 'x'};
 int moveFromI[2];
@@ -64,11 +66,14 @@ int allMoves[DATABASE_DEPTH][DATABASE_WIDTH];
 int allCompMoves[DATABASE_DEPTH][DATABASE_WIDTH];
 int allHumanMoves[DATABASE_DEPTH][DATABASE_WIDTH];
 
-int MAXDEPTH = 49;
+int HUM_MOVE[4];
+int COM_MOVE[4];
+
+int MAXDEPTH = 5;
 int INDEX = 0;
 
 
-void makeMove();
+void makeComMove();
 int min(int depth);
 int max(int depth);
 int evaluate();
@@ -97,13 +102,23 @@ void showAllMoves(void);
 
 bool endOfMoveList(const int *list);
 
+void makeHumMove();
+
 int main() {
     setupBoard();
     printBoard();
     generateAllMoves();
     showAllMoves();
-
-
+    for(;;){
+        getAMove();
+        makeHumMove();
+        printBoard();
+        generateAllMoves();
+        showAllMoves();
+//        checkForWinner();
+        makeComMove();
+//        checkGameOver();
+    }
 
 #if RUN_TEST
     convertMoveToInternalRep("A1B4");
@@ -114,12 +129,6 @@ int main() {
     << moveToExternal[1] << endl;
     cout << (isMoveLegal() ? "The move is legal" : "The move is illegal");
 #endif
-//    for(;;){
-//        getAMove();
-//        checkGameOver();
-//        makeMove();
-//        checkGameOver();
-//    }
 }
 
 void setupBoard(){
@@ -260,7 +269,6 @@ void convertMoveToInternalRep(char *move){
         moveToI[0] = -1;
     }
 }
-
 char* convertMoveExternalRep(int *move){
     char *returnValue = new char[5];
     for(int i = 0; i < 2; i++){
@@ -309,7 +317,6 @@ char* convertMoveExternalRep(int *move){
     returnValue[4] ='\0';
     return returnValue;
 }
-
 void convertMoveExternalRep(){
     for(int i = 0; i < 2; i++){
         int const *convFrom;
@@ -422,8 +429,7 @@ bool lastComMoveWasTHor(void){
     return COM_T_FIGHTER_HOR_MOVE;
 }
 
-
-bool endOfMoveList(int const *list){
+bool endOfMoveList(int *list){
     return (list[0] == -1 && list[1] == -1 &&
        list[2] == -1 && list[3] == -1);
 }
@@ -456,9 +462,19 @@ bool humWins(){
     return false;
 }
 
+
+int evaluateMoveability(){
+    return NUM_COM_MOVES - NUM_HUM_MOVES;
+}
+
+int evaluate(){ //STUB  //HEURISTIC
+    evaluateMoveability();
+}
+
 void showAllMoves(void){
     int counter = 0;
     int TURN = allMoves[counter][MOVE_FIG_TYPE];
+    cout << ((allMoves[counter][MOVE_WHOSE_MOVE] == COM_TURN) ? "COM MOVES: " : "HUM MOVES: ");
     while(true){
         cout << convertMoveExternalRep(allMoves[counter]);
         cout << "..";
@@ -467,6 +483,7 @@ void showAllMoves(void){
 
         if(allMoves[counter][MOVE_FIG_TYPE] != TURN){
             cout << endl;
+            cout << ((allMoves[counter-1][MOVE_WHOSE_MOVE] == COM_TURN) ? "COM MOVES: " : "HUM MOVES: ");
             TURN = allMoves[counter][MOVE_FIG_TYPE];
         }
     }
@@ -497,8 +514,10 @@ void addToDatabase(int *move) {
 
     if(allMoves[INDEX][MOVE_WHOSE_MOVE] == HUM_TURN){
         memcpy(&allCompMoves[INDEX], move, sizeof(allCompMoves[0][0]) * 4);
+        NUM_HUM_MOVES++;
     } else if(allMoves[INDEX][MOVE_WHOSE_MOVE] == COM_TURN){
         memcpy(&allHumanMoves[INDEX], move, sizeof(allHumanMoves[0][0]) * 4);
+        NUM_COM_MOVES++;
     }
     INDEX++;
 }
@@ -646,7 +665,7 @@ void findAllMovesForCompX(int move[]){
 void generateAllMoves(){
     memset(allMoves, -1, sizeof(allMoves[0][0]) * 200 * 4);
     INDEX = 0;
-    cout << "Generate all moves..." << endl << endl;
+    //cout << "Generate all moves..." << endl << endl;
     int move[4];
     for(int i = 0; i < BRD_LENGTH; i++){
         for(int j = 0; j < BRD_LENGTH; j++){
@@ -808,17 +827,26 @@ void findAllMovesForHumT(int move[]){
     move[ROW]++; moveHumTDown(move); move[ROW]--;
 }
 
-
-
-
-
-
 void getAMove(){
-    int i;
-    int j;
-    cout << "Enter your move: " ;
-    cin >> i >> j;
-    board[i][j] = H_MOVE;
+    char move[5];
+    cout << endl << "Enter your move: " ;
+    cin >> move[0];
+    cin >> move[1];
+    cin >> move[2];
+    cin >> move[3];
+    move[4] = '\0';
+    cout << endl;
+    convertMoveToInternalRep(move);
+    HUM_MOVE[0] = moveFromI[0];
+    HUM_MOVE[1] = moveFromI[1];
+    HUM_MOVE[2] = moveToI[0];
+    HUM_MOVE[3] = moveToI[1];
+}
+
+void makeHumMove(){
+    int prevMove =  board[HUM_MOVE[MOVE_FROM_ROW]][HUM_MOVE[MOVE_FROM_COL]];
+    board[HUM_MOVE[MOVE_FROM_ROW]][HUM_MOVE[MOVE_FROM_COL]] = EMPTY;
+    board[HUM_MOVE[MOVE_TO_ROW]][HUM_MOVE[MOVE_TO_COL]] = prevMove;
 }
 
 void checkGameOver(){
@@ -837,60 +865,117 @@ void checkGameOver(){
     }
 }
 
-void makeMove(){
-    int best =-20000, depth = 1, score, mi, mj;
-    for(int i = 0; i < 3; i++){
-        for(int j = 0; j < 3; j++){
-            if(board[i][j] == EMPTY){
-                board[i][j] = C_MOVE; //make move board
-                score = min(depth+1);
-                if(score > best){
-                    mi = i;
-                    mj = j;
-                    best = score;
-                }
-                board[i][j] = EMPTY; //undo move
+void makeComMove(){
+    int best =-20000, depth = 1, score;
+    int BEST_MOVE[4], LOCAL_MOVE[4];
+    int counter = 0;
+    for(;;){
+        COM_MOVE[0] = LOCAL_MOVE[0] = allCompMoves[counter][0];
+        COM_MOVE[1] = LOCAL_MOVE[1] = allCompMoves[counter][1];
+        COM_MOVE[2] = LOCAL_MOVE[2] = allCompMoves[counter][2];
+        COM_MOVE[3] = LOCAL_MOVE[3] = allCompMoves[counter][3];
+        int prevMove = board[COM_MOVE[MOVE_FROM_ROW]][COM_MOVE[MOVE_FROM_COL]];
+        board[COM_MOVE[MOVE_FROM_ROW]][COM_MOVE[MOVE_FROM_COL]] = EMPTY;
+        board[COM_MOVE[MOVE_TO_ROW]][COM_MOVE[MOVE_TO_COL]] = prevMove;
+
+        score = min(depth+1);
+            if(score > best){
+                BEST_MOVE[0] = allCompMoves[counter][0];
+                BEST_MOVE[1] = allCompMoves[counter][1];
+                BEST_MOVE[2] = allCompMoves[counter][2];
+                BEST_MOVE[3] = allCompMoves[counter][3];
+                best = score;
             }
+        //undo move
+        prevMove = board[LOCAL_MOVE[MOVE_TO_ROW]][LOCAL_MOVE[MOVE_TO_COL]];
+        board[LOCAL_MOVE[MOVE_TO_ROW]][LOCAL_MOVE[MOVE_TO_COL]] = EMPTY;
+        board[LOCAL_MOVE[MOVE_FROM_ROW]][LOCAL_MOVE[MOVE_FROM_COL]] = prevMove;
+
+        counter++;
+        if(endOfMoveList(allCompMoves[counter])){
+            break;
         }
     }
-    cout << "my move is" << mi << " " << mj << endl;
-    board[mi][mj] = C_MOVE;
+    cout << "my move is" << convertMoveExternalRep(BEST_MOVE) << endl;
+    int prevMove = board[BEST_MOVE[MOVE_FROM_ROW]][BEST_MOVE[MOVE_FROM_COL]];
+    board[BEST_MOVE[MOVE_FROM_ROW]][BEST_MOVE[MOVE_FROM_COL]] = EMPTY;
+    board[BEST_MOVE[MOVE_TO_ROW]][BEST_MOVE[MOVE_TO_COL]] = prevMove;
 }
 
 int min(int depth){
     int best = 20000;
     int score;
-    if(checkForWinner() != NOT_OVER) return (checkForWinner());
+    int BEST_MOVE[4], LOCAL_MOVE[4];
+    int counter = 0;
+    if(checkForWinner() != GAME_OVER) return (checkForWinner());
     if(depth == MAXDEPTH) return (evaluate());
-    for(int i = 0; i < 3; i++){
-        for(int j = 0; j < 3; j++){
-            if(board[i][j] == EMPTY){
-                board[i][j] = H_MOVE; //make move on board
-                score = max(depth+1);
-                if(score < best) best = score;
-                board[i][j] = EMPTY; // undo move
-            }
+
+    for(;;){
+        HUM_MOVE[0] = LOCAL_MOVE[0] = allHumanMoves[counter][0];
+        HUM_MOVE[1] = LOCAL_MOVE[1] = allHumanMoves[counter][1];
+        HUM_MOVE[2] = LOCAL_MOVE[2] = allHumanMoves[counter][2];
+        HUM_MOVE[3] = LOCAL_MOVE[3] = allHumanMoves[counter][3];
+        int prevMove = board[HUM_MOVE[MOVE_FROM_ROW]][HUM_MOVE[MOVE_FROM_COL]];
+        board[HUM_MOVE[MOVE_FROM_ROW]][HUM_MOVE[MOVE_FROM_COL]] = EMPTY;
+        board[HUM_MOVE[MOVE_TO_ROW]][HUM_MOVE[MOVE_TO_COL]] = prevMove;
+
+        score = max(depth+1);
+        if(score < best){
+            BEST_MOVE[0] = allHumanMoves[counter][0];
+            BEST_MOVE[1] = allHumanMoves[counter][1];
+            BEST_MOVE[2] = allHumanMoves[counter][2];
+            BEST_MOVE[3] = allHumanMoves[counter][3];
+            best = score;
+        }
+        //undo move
+        prevMove = board[LOCAL_MOVE[MOVE_TO_ROW]][LOCAL_MOVE[MOVE_TO_COL]];
+        board[LOCAL_MOVE[MOVE_TO_ROW]][LOCAL_MOVE[MOVE_TO_COL]] = EMPTY;
+        board[LOCAL_MOVE[MOVE_FROM_ROW]][LOCAL_MOVE[MOVE_FROM_COL]] = prevMove;
+
+        counter++;
+        if(endOfMoveList(allHumanMoves[counter])){
+            break;
         }
     }
     return (best);
 }
 
 int max(int depth){
-    int best =-20000;
+    int best = -20000;
     int score;
-    if(checkForWinner() != NOT_OVER) return (checkForWinner());
+    int BEST_MOVE[4], LOCAL_MOVE[4];
+    int counter = 0;
+    if(checkForWinner() != GAME_OVER) return (checkForWinner());
     if(depth == MAXDEPTH) return (evaluate());
-    for(int i = 0; i < 3; i++){
-        for (int j = 0; j < 3; j++){
-            if(board[i][j] == EMPTY){
-                board[i][j] = C_MOVE; //make move on board
-                score = min(depth + 1);
-                if(score > best) best = score;
-                board[i][j] = EMPTY; //undo move
-            }
+
+    for(;;){
+        COM_MOVE[0] = LOCAL_MOVE[0] = allCompMoves[counter][0];
+        COM_MOVE[1] = LOCAL_MOVE[1] = allCompMoves[counter][1];
+        COM_MOVE[2] = LOCAL_MOVE[2] = allCompMoves[counter][2];
+        COM_MOVE[3] = LOCAL_MOVE[3] = allCompMoves[counter][3];
+        int prevMove = board[COM_MOVE[MOVE_FROM_ROW]][COM_MOVE[MOVE_FROM_COL]];
+        board[COM_MOVE[MOVE_FROM_ROW]][COM_MOVE[MOVE_FROM_COL]] = EMPTY;
+        board[COM_MOVE[MOVE_TO_ROW]][COM_MOVE[MOVE_TO_COL]] = prevMove;
+
+        score = max(depth+1);
+        if(score >  best){
+            BEST_MOVE[0] = allCompMoves[counter][0];
+            BEST_MOVE[1] = allCompMoves[counter][1];
+            BEST_MOVE[2] = allCompMoves[counter][2];
+            BEST_MOVE[3] = allCompMoves[counter][3];
+            best = score;
+        }
+        //undo move
+        prevMove = board[LOCAL_MOVE[MOVE_TO_ROW]][LOCAL_MOVE[MOVE_TO_COL]];
+        board[LOCAL_MOVE[MOVE_TO_ROW]][LOCAL_MOVE[MOVE_TO_COL]] = EMPTY;
+        board[LOCAL_MOVE[MOVE_FROM_ROW]][LOCAL_MOVE[MOVE_FROM_COL]] = prevMove;
+
+        counter++;
+        if(endOfMoveList(allCompMoves[counter])){
+            break;
         }
     }
-    return best;
+    return (best);
 }
 
 int checkForWinner(){
@@ -915,15 +1000,13 @@ int checkForWinner(){
 
     for(int i = 0; i < 3; i++){
         for (int j = 0; j < 3; j++){
-            if(board[i][j] == EMPTY) return NOT_OVER; //game not over
+            if(board[i][j] == EMPTY) return GAME_OVER; //game not over
         }
     }
     return DRAW; //game over - draw 0
 }
 
-int evaluate(){ //STUB  //HEURISTIC
-    return 0;
-}
+
 
 
 
