@@ -203,20 +203,27 @@ void printBoard(){
     decorateColumns();
 }
 
+bool justEnteredMoveLegal(){
+    return !(moveFromI[0] == -1 ||
+        moveFromI[1] == -1 ||
+        moveToI[0] == -1 ||
+        moveToI[1] == -1);
+}
+
 void convertMoveToInternalRep(char *move){
-    if(move[0] == 'A'){
+    if(move[0] == 'A' || move[0] == 'a'){
         moveFromI[1] = 0;
-    } else if(move[0] == 'B'){
+    } else if(move[0] == 'B' || move[0] == 'b'){
         moveFromI[1] = 1;
-    } else if(move[0] == 'C'){
+    } else if(move[0] == 'C' || move[0] == 'c'){
         moveFromI[1] = 2;
-    } else if(move[0] == 'D'){
+    } else if(move[0] == 'D' || move[0] == 'd'){
         moveFromI[1] = 3;
-    } else if(move[0] == 'E'){
+    } else if(move[0] == 'E' || move[0] == 'e'){
         moveFromI[1] = 4;
-    } else if(move[0] == 'F'){
+    } else if(move[0] == 'F' || move[0] == 'f'){
         moveFromI[1] = 5;
-    } else if(move[0] == 'G'){
+    } else if(move[0] == 'G' || move[0] == 'g'){
         moveFromI[1] = 6;
     } else {
         moveFromI[1] = -1;
@@ -240,19 +247,19 @@ void convertMoveToInternalRep(char *move){
         moveFromI[0] = -1;
     }
 
-    if(move[2] == 'A'){
+    if(move[2] == 'A' || move[2] == 'a'){
         moveToI[1] = 0;
-    } else if(move[2] == 'B'){
+    } else if(move[2] == 'B' || move[2] == 'b'){
         moveToI[1] = 1;
-    } else if(move[2] == 'C'){
+    } else if(move[2] == 'C' || move[2] == 'c'){
         moveToI[1] = 2;
-    } else if(move[2] == 'D'){
+    } else if(move[2] == 'D' || move[2] == 'd'){
         moveToI[1] = 3;
-    } else if(move[2] == 'E'){
+    } else if(move[2] == 'E' || move[2] == 'e'){
         moveToI[1] = 4;
-    } else if(move[2] == 'F'){
+    } else if(move[2] == 'F' || move[2] == 'f'){
         moveToI[1] = 5;
-    } else if(move[2] == 'G'){
+    } else if(move[2] == 'G' || move[2] == 'g'){
         moveToI[1] = 6;
     } else {
         moveToI[1] = -1;
@@ -868,6 +875,12 @@ void getAMove(){
     move[4] = '\0';
     cout << endl;
     convertMoveToInternalRep(move);
+//    if(!justEnteredMoveLegal()) {
+//        cout << "Entered move is illegal. Please, enter the right move" << endl;
+//        getAMove();
+//    } else {
+//        //TODO: add logic so it goes through all of the moves and checks if it's legal
+//    }
     HUM_MOVE[0] = moveFromI[0];
     HUM_MOVE[1] = moveFromI[1];
     HUM_MOVE[2] = moveToI[0];
