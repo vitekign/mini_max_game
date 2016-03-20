@@ -70,7 +70,7 @@ int HUM_MOVE[4];
 int COM_MOVE[4];
 
 
-int MAXDEPTH =6;
+int MAXDEPTH = 5;
 
 
 
@@ -476,7 +476,7 @@ int evaluateMoveability(){
 
 int evaluate(){ //STUB  //HEURISTIC
     generateAllMoves();
-    evaluateMoveability();
+    return (evaluateMoveability());
 }
 
 void showAllMoves(void){
@@ -898,7 +898,7 @@ void checkGameOver(){
 }
 
 void makeComMove(){
-    int best =-20000, depth = 1, score;
+    int best =-20000, depth = 0, score;
     int BEST_MOVE[4], LOCAL_MOVE[4];
     int counter = 0;
 
@@ -936,7 +936,7 @@ void makeComMove(){
             break;
         }
     }
-    cout << endl << "Opponent's move is: " << convertMoveExternalRep(BEST_MOVE) << endl;
+    cout << endl << "Opponent's move is: " << convertMoveExternalRep(BEST_MOVE) << endl << "  best: " << best;
     int prevMove = board[BEST_MOVE[MOVE_FROM_ROW]][BEST_MOVE[MOVE_FROM_COL]];
     board[BEST_MOVE[MOVE_FROM_ROW]][BEST_MOVE[MOVE_FROM_COL]] = EMPTY;
     board[BEST_MOVE[MOVE_TO_ROW]][BEST_MOVE[MOVE_TO_COL]] = prevMove;
@@ -975,21 +975,17 @@ int min(int depth){
         board[LOCAL_HUM_MOVE[MOVE_TO_ROW]][LOCAL_HUM_MOVE[MOVE_TO_COL]] = prevFigure;
         board[LOCAL_HUM_MOVE[MOVE_FROM_ROW]][LOCAL_HUM_MOVE[MOVE_FROM_COL]] = prevMove;
 
-
-
         generateAllMoves();
 
         if(score < best){
             best = score;
         }
-
         counter++;
-
         if(counter >= maxMoves){
             break;
         }
     }
-    return (best);
+    return best + depth;
 }
 
 int max(int depth){
@@ -1034,7 +1030,7 @@ int max(int depth){
             break;
         }
     }
-    return (best);
+    return best - depth;
 }
 
 int checkForWinner(){
