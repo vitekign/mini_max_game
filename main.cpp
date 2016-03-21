@@ -53,6 +53,12 @@ enum TURN{
     HUM_TURN,
 };
 
+enum GENERAL{
+    COM,
+    HUM,
+    BOTH,
+};
+
 int numHumMoves = 0;
 int numComMoves = 0;
 
@@ -70,7 +76,7 @@ int HUM_MOVE[4];
 int COM_MOVE[4];
 
 
-int MAXDEPTH = 5;
+int MAXDEPTH = 4;
 
 
 
@@ -105,7 +111,8 @@ void findAllMovesForHumX(int move[]);
 
 void findAllMovesForHumT(int move[]);
 
-void showAllMoves(void);
+/* BOTH | COM | HUM */
+void showAllMoves(int);
 
 bool endOfMoveList(const int *list);
 
@@ -115,13 +122,13 @@ int main() {
     setupBoard();
     printBoard();
     generateAllMoves();
-    showAllMoves();
+    showAllMoves(BOTH);
     for(;;){
         getAMove();
         makeHumMove();
         printBoard();
         generateAllMoves();
-        showAllMoves();
+        showAllMoves(BOTH);
 //        checkForWinner();
         makeComMove();
 //        checkGameOver();
@@ -481,28 +488,61 @@ int evaluateMoveability(){
     return numComMoves - numHumMoves;
 }
 
-int evaluate(){ //STUB  //HEURISTIC
-    generateAllMoves();
-    return (evaluateMoveability());
-}
-
-void showAllMoves(void){
-    int counter = 0;
-    int TURN = allMoves[counter][MOVE_FIG_TYPE];
-    cout << ((allMoves[counter][MOVE_WHOSE_MOVE] == COM_TURN) ? "COM MOVES: " : "HUM MOVES: ");
-    while(true){
-        cout << convertMoveExternalRep(allMoves[counter]);
-        cout << "..";
-        counter++;
-        if (endOfMoveList(allMoves[counter])) break;
-
-        if(allMoves[counter][MOVE_FIG_TYPE] != TURN){
-            cout << endl;
-            cout << ((allMoves[counter-1][MOVE_WHOSE_MOVE] == COM_TURN) ? "COM MOVES: " : "HUM MOVES: ");
-            TURN = allMoves[counter][MOVE_FIG_TYPE];
+int findTheNumberOfFigures(int side){
+    int num_of_comp_figures = 0;
+    int num_of_hum_figures = 0;
+    for(int i = 0; i < BRD_LENGTH; i++){
+        for(int j = 0; j < BRD_LENGTH; j++){
+            if(board[i][j] == H_T || board[i][j] == H_X)
+                num_of_hum_figures++;
+            if(board[i][j] == C_T || board[i][j] == C_X)
+                num_of_comp_figures++;
         }
     }
-    return;
+    if(side == COM){
+        return num_of_comp_figures;
+    }
+    if(side == HUM){
+        return num_of_hum_figures;
+    }
+}
+
+int evaluateNumberOfTakenFigures(){
+
+}
+
+int evaluate(){ //STUB  //HEURISTIC
+    generateAllMoves();
+    //return (evaluateMoveability());
+    return (findTheNumberOfFigures(COM) - findTheNumberOfFigures(HUM));
+}
+
+void showAllMoves(int advToShow){
+    if(advToShow == BOTH) {
+        cout << "COM MOVES: ";
+        for (int i = 0; i < numComMoves; i++) {
+            cout << convertMoveExternalRep(allCompMoves[i]);
+            cout << "..";
+        }
+        cout << endl << "HUM MOVES: ";
+        for (int i = 0; i < numComMoves; i++) {
+            cout << convertMoveExternalRep(allHumanMoves[i]);
+            cout << "..";
+        }
+    }
+    else if(advToShow == COM){
+        cout << endl << "COM MOVES: ";
+        for (int i = 0; i < numComMoves; i++) {
+            cout << convertMoveExternalRep(allCompMoves[i]);
+            cout << "..";
+        }
+    } else if(advToShow == HUM){
+        cout << endl << "HUM MOVES: ";
+        for (int i = 0; i < numComMoves; i++) {
+            cout << convertMoveExternalRep(allHumanMoves[i]);
+            cout << "..";
+        }
+    }
 }
 
 void addToDatabase(int *move) {
@@ -955,7 +995,7 @@ void makeComMove(){
     board[BEST_MOVE[MOVE_TO_ROW]][BEST_MOVE[MOVE_TO_COL]] = prevMove;
     generateAllMoves();
     printBoard();
-    showAllMoves();
+    showAllMoves(BOTH);
 }
 
 int min(int depth){
