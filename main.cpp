@@ -17,6 +17,7 @@ using namespace std;
 #define GAME_OVER           -1
 #define GAME_NOT_OVER       -1
 
+
 #define INT_ROW             0
 #define EXT_ROW             1
 #define INT_COL             1
@@ -61,7 +62,7 @@ enum GENERAL{
     HUM,
     BOTH,
 };
-
+int BEST_SCORE = 0;
 int NUM_OF_LEAVES = 0;
 
 int numHumMoves = 0;
@@ -87,7 +88,7 @@ int COM_INDEX = 0;
 int HUM_INDEX = 0;
 
 
-void makeComMove();
+int* makeComMove();
 int min(int depth,int previousBest);
 int max(int depth, int previousBest);
 int evaluate();
@@ -119,6 +120,8 @@ bool endOfMoveList(const int *list);
 
 void makeHumMove();
 
+void makeCompMoveOnBoard();
+
 int main() {
     setupBoard();
     printBoard();
@@ -131,7 +134,7 @@ int main() {
         printBoard();
         generateAllMoves();
         showAllMoves(BOTH);
-        makeComMove();
+        makeCompMoveOnBoard();
         checkGameOver();
     }
 #if RUN_TEST
@@ -962,7 +965,19 @@ void runIterativeDeepening(){
 
 }
 
-void makeComMove(){
+void makeCompMoveOnBoard(){
+    int *bestMove = makeComMove();
+    cout << endl << "Opponent's move is: " << convertMoveExternalRep(bestMove) << endl << "  best: " << BEST_SCORE << endl;
+    cout << endl << "The algorithm went through " << NUM_OF_LEAVES << " calls";
+    int prevMove = board[bestMove[MOVE_FROM_ROW]][bestMove[MOVE_FROM_COL]];
+    board[bestMove[MOVE_FROM_ROW]][bestMove[MOVE_FROM_COL]] = EMPTY;
+    board[bestMove[MOVE_TO_ROW]][bestMove[MOVE_TO_COL]] = prevMove;
+    resetAllMovesAfterChangeOnBoard();
+    printBoard();
+    showAllMoves(BOTH);
+}
+
+int* makeComMove(){
     NUM_OF_LEAVES++;
     int best =-20000, depth = 0, score;
     int BEST_MOVE[4], LOCAL_MOVE[4];
@@ -999,14 +1014,10 @@ void makeComMove(){
             break;
         }
     }
-    cout << endl << "Opponent's move is: " << convertMoveExternalRep(BEST_MOVE) << endl << "  best: " << best;
-    cout << endl << "The algorithm went through " << NUM_OF_LEAVES << " calls";
-    int prevMove = board[BEST_MOVE[MOVE_FROM_ROW]][BEST_MOVE[MOVE_FROM_COL]];
-    board[BEST_MOVE[MOVE_FROM_ROW]][BEST_MOVE[MOVE_FROM_COL]] = EMPTY;
-    board[BEST_MOVE[MOVE_TO_ROW]][BEST_MOVE[MOVE_TO_COL]] = prevMove;
-    resetAllMovesAfterChangeOnBoard();
-    printBoard();
-    showAllMoves(BOTH);
+    BEST_SCORE = best;
+    int *returnValue = (int*)calloc(4, sizeof(int));
+    memcpy(returnValue, BEST_MOVE, sizeof(int) * 4);
+    return returnValue;
 }
 
 int min(int depth, int previousBest){
