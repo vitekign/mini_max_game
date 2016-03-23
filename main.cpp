@@ -4,20 +4,23 @@
 using namespace std;
 
 
-#define RUN_TEST 0
+
+
+#define RUN_TEST            0
 
 #define H_MOVE 2
 #define C_MOVE 1
-#define EMPTY 0
-#define C_WINS 5000
-#define H_WINS -5000
-#define DRAW 0
-#define GAME_OVER -1
+#define EMPTY               0
+#define C_WINS              5000
+#define H_WINS              -5000
+#define DRAW                0
+#define GAME_OVER           -1
+#define GAME_NOT_OVER       -1
 
-#define INT_ROW 0
-#define EXT_ROW 1
-#define INT_COL 1
-#define EXT_COL 0
+#define INT_ROW             0
+#define EXT_ROW             1
+#define INT_COL             1
+#define EXT_COL             0
 
 #define ROW 2
 #define COL 3
@@ -75,11 +78,7 @@ int allHumanMoves[DATABASE_DEPTH][DATABASE_WIDTH];
 int HUM_MOVE[4];
 int COM_MOVE[4];
 
-
-int MAXDEPTH = 4;
-
-
-
+int MAXDEPTH = 5;
 
 int ALL_INDEX = 0;
 int COM_INDEX = 0;
@@ -90,7 +89,7 @@ void makeComMove();
 int min(int depth);
 int max(int depth);
 int evaluate();
-int checkForWinner();
+int checkForWinner(int);
 void checkGameOver();
 void getAMove();
 void setupBoard();
@@ -126,12 +125,12 @@ int main() {
     for(;;){
         getAMove();
         makeHumMove();
+        checkGameOver();
         printBoard();
         generateAllMoves();
         showAllMoves(BOTH);
-        //checkForWinner();
         makeComMove();
-        //checkGameOver();
+        checkGameOver();
     }
 #if RUN_TEST
     convertMoveToInternalRep("A1B4");
@@ -143,6 +142,7 @@ int main() {
     cout << (isMoveLegal() ? "The move is legal" : "The move is illegal");
 #endif
 }
+
 
 void setupBoard(){
     for (int i = 0; i < BRD_LENGTH; i++){
@@ -197,10 +197,12 @@ void labelAdversariesBoards(int i, int j){
 }
 
 void printBoard(){
+
     cout << endl;
     for(int i = 0; i < BRD_LENGTH; i++){
         for (int j = 0; j < BRD_LENGTH; j++){
             decorateRows(i,j);
+
             cout << board_labels[board[i][j]] << " ";
             labelAdversariesBoards(i, j);
         }
@@ -454,31 +456,25 @@ bool endOfMoveList(int *list){
        list[2] == -1 && list[3] == -1);
 }
 
-bool compWins(){
-    int counter = 0;
-    while(true){
-        if(endOfMoveList(allCompMoves[counter])) break;
-        if(endOfMoveList(allHumanMoves[0])){
-            return true;
-        } else if(board[allCompMoves[counter][MOVE_TO_ROW]][allMoves[counter][MOVE_TO_COL]] == H_D){
-            return true;
-        }
-        counter++;
+bool compWins() {
+    if (numComMoves == 0)
+        return false;
+    if (numHumMoves == 0)
+        return true;
+
+    if(board[5][3] != H_D) {
+        return true;
     }
     return false;
 }
 
 bool humWins(){
-    int counter = 0;
-    while(true){
-        if(endOfMoveList(allHumanMoves[counter])) break;
-        if(endOfMoveList(allCompMoves[0])){
-            return true;
-        } else if(board[allHumanMoves[counter][MOVE_TO_ROW]][allHumanMoves[counter][MOVE_TO_COL]] == C_D){
-            return true;
-        }
-        counter++;
-    }
+   if(numHumMoves == 0)
+       return false;
+    if(numComMoves == 0)
+        return true;
+    if(board[1][3] != C_D)
+        return true;
     return false;
 }
 
@@ -511,9 +507,16 @@ int evaluateNumberOfTakenFigures(){
 }
 
 int evaluate(){ //STUB  //HEURISTIC
+
+    float beatDeathStarWeight = 0;
+    if(compWins())
+        beatDeathStarWeight = 15;
+    if(humWins()){
+        beatDeathStarWeight = -15;
+    }
+
     generateAllMoves();
-    //return (evaluateMoveability());
-    return (findTheNumberOfFigures(COM) - findTheNumberOfFigures(HUM));
+    return (int) (findTheNumberOfFigures(COM) - findTheNumberOfFigures(HUM));  // + beatDeathStarWeight);
 }
 
 void showAllMoves(int advToShow){
@@ -587,10 +590,10 @@ void addToDatabase(int *move) {
     }
 
     if(allMoves[ALL_INDEX][MOVE_WHOSE_MOVE] == COM_TURN){
-        memcpy(&allCompMoves[numComMoves++], move, sizeof(int) * 4);
+        memcpy(&allCompMoves[numComMoves++], move, sizeof(int) * 6);
     }
     if(allMoves[ALL_INDEX][MOVE_WHOSE_MOVE] == HUM_TURN){
-        memcpy(&allHumanMoves[numHumMoves++], move, sizeof(int) * 4);
+        memcpy(&allHumanMoves[numHumMoves++], move, sizeof(int) * 6);
     }
     ALL_INDEX++;
 }
@@ -892,7 +895,7 @@ void moveHumTUp(int move[]){
     }
     if(emptySpot(move)) {
         addToDatabase(move);
-        move[ROW]++; moveHumTUp(move); move[ROW]--;
+        move[ROW]--; moveHumTUp(move); move[ROW]++;
     }
     return; //return if it's run into a DEATH STAR
 }
@@ -936,17 +939,14 @@ void makeHumMove(){
 }
 
 void checkGameOver(){
-    printBoard();
-    if(checkForWinner() == H_WINS) { // -5000
-        cout << "you win" << endl;
+    if(checkForWinner(0) == H_WINS) { // -5000
+        printBoard();
+        cout << "Human win" << endl;
         exit(0);
     }
-    if(checkForWinner() == C_WINS){  // 5000
-        cout << "I win " << endl;
-        exit(0);
-    }
-    if(checkForWinner() == DRAW){
-        cout << "Draw" << endl ;
+    if(checkForWinner(0) == C_WINS){  // 5000
+        printBoard();
+        cout << "Computer win " << endl;
         exit(0);
     }
 }
@@ -1005,7 +1005,11 @@ int min(int depth){
     int score;
     int  LOCAL_HUM_MOVE[4];
     int counter = 0;
-   // if(checkForWinner() != GAME_OVER) return (checkForWinner());
+    if(checkForWinner(depth) != GAME_NOT_OVER) {
+        //cout << "Current score is: " << evaluate() << endl;
+        return checkForWinner(depth);
+    }
+     //(evaluate() + depth);
     if(depth == MAXDEPTH) return (evaluate());
 
     int maxMoves = numHumMoves;
@@ -1038,7 +1042,7 @@ int min(int depth){
             break;
         }
     }
-    return best + depth;
+    return best;// + depth;
 }
 
 
@@ -1048,7 +1052,10 @@ int max(int depth){
     int score;
     int LOCAL_COM_MOVE[4];
     int counter = 0;
-    //if(checkForWinner() != GAME_OVER) return (checkForWinner());
+    if(checkForWinner(depth) != GAME_NOT_OVER) {
+       // cout << "Current score is: " << evaluate() << endl;
+        return checkForWinner(depth);
+    }
     if(depth == MAXDEPTH) return (evaluate());
 
     int maxMoves = numComMoves;
@@ -1080,35 +1087,18 @@ int max(int depth){
             break;
         }
     }
-    return best - depth;
+    return best;// - depth;
 }
 
-int checkForWinner(){
-    if ((board[0][0] == C_MOVE ) && (board[0][1] == C_MOVE ) && (board[0][2] == C_MOVE )
-        || (board[1][0] == C_MOVE ) && (board[1][1] == C_MOVE ) && (board[1][2] == C_MOVE )
-        || (board[2][0] == C_MOVE ) && (board[2][1] == C_MOVE ) && (board[2][2] == C_MOVE )
-        || (board[0][0] == C_MOVE ) && (board[1][0] == C_MOVE ) && (board[2][0] == C_MOVE )
-        || (board[0][1] == C_MOVE ) && (board[1][1] == C_MOVE ) && (board[2][1] == C_MOVE )
-        || (board[0][2] == C_MOVE ) && (board[1][2] == C_MOVE ) && (board[2][2] == C_MOVE )
-        || (board[0][0] == C_MOVE ) && (board[1][1] == C_MOVE ) && (board[2][2] == C_MOVE )
-        || (board[0][2] == C_MOVE ) && (board[1][1] == C_MOVE ) && (board[2][0] == C_MOVE ))
-        return C_WINS; //computer wins 5000
-    if ((board[0][0] == H_MOVE ) && (board[0][1] == H_MOVE ) && (board[0][2] == H_MOVE )
-        || (board[1][0] == H_MOVE ) && (board[1][1] == H_MOVE ) && (board[1][2] == H_MOVE )
-        || (board[2][0] == H_MOVE ) && (board[2][1] == H_MOVE ) && (board[2][2] == H_MOVE )
-        || (board[0][0] == H_MOVE ) && (board[1][0] == H_MOVE ) && (board[2][0] == H_MOVE )
-        || (board[0][1] == H_MOVE ) && (board[1][1] == H_MOVE ) && (board[2][1] == H_MOVE )
-        || (board[0][2] == H_MOVE ) && (board[1][2] == H_MOVE ) && (board[2][2] == H_MOVE )
-        || (board[0][0] == H_MOVE ) && (board[1][1] == H_MOVE ) && (board[2][2] == H_MOVE )
-        || (board[0][2] == H_MOVE ) && (board[1][1] == H_MOVE ) && (board[2][0] == H_MOVE ))
-        return H_WINS; //human wins -5000
-
-    for(int i = 0; i < 3; i++){
-        for (int j = 0; j < 3; j++){
-            if(board[i][j] == EMPTY) return GAME_OVER; //game not over
-        }
+int checkForWinner(int depth){
+    if (compWins()){
+        return C_WINS - depth; //computer wins 5000
     }
-    return DRAW; //game over - draw 0
+
+    if (humWins())
+        return H_WINS + depth; //human wins -5000
+
+    return GAME_NOT_OVER;
 }
 
 
