@@ -1072,7 +1072,7 @@ int max(int depth){
         board[LOCAL_COM_MOVE[MOVE_TO_ROW]][LOCAL_COM_MOVE[MOVE_TO_COL]] = prevMove;
         resetAllMovesAfterChangeOnBoard();
 
-        score = max(depth+1);
+        score = min(depth+1);
 
         //undo move
         board[LOCAL_COM_MOVE[MOVE_TO_ROW]][LOCAL_COM_MOVE[MOVE_TO_COL]] = prevFigure;
