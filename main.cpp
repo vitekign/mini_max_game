@@ -62,6 +62,8 @@ enum GENERAL{
     BOTH,
 };
 
+int NUM_OF_LEAVES = 0;
+
 int numHumMoves = 0;
 int numComMoves = 0;
 
@@ -961,6 +963,7 @@ void runIterativeDeepening(){
 }
 
 void makeComMove(){
+    NUM_OF_LEAVES++;
     int best =-20000, depth = 0, score;
     int BEST_MOVE[4], LOCAL_MOVE[4];
     int counter = 0;
@@ -997,6 +1000,7 @@ void makeComMove(){
         }
     }
     cout << endl << "Opponent's move is: " << convertMoveExternalRep(BEST_MOVE) << endl << "  best: " << best;
+    cout << endl << "The algorithm went through " << NUM_OF_LEAVES << " calls";
     int prevMove = board[BEST_MOVE[MOVE_FROM_ROW]][BEST_MOVE[MOVE_FROM_COL]];
     board[BEST_MOVE[MOVE_FROM_ROW]][BEST_MOVE[MOVE_FROM_COL]] = EMPTY;
     board[BEST_MOVE[MOVE_TO_ROW]][BEST_MOVE[MOVE_TO_COL]] = prevMove;
@@ -1006,6 +1010,7 @@ void makeComMove(){
 }
 
 int min(int depth, int previousBest){
+    NUM_OF_LEAVES++;
     int best = 20000;
     int score;
     int  LOCAL_HUM_MOVE[4];
@@ -1057,6 +1062,7 @@ int min(int depth, int previousBest){
 
 
 int max(int depth, int previousBest){
+    NUM_OF_LEAVES++;
     int best = -20000;
     int score;
     int LOCAL_COM_MOVE[4];
