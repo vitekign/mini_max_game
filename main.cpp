@@ -86,8 +86,8 @@ int HUM_INDEX = 0;
 
 
 void makeComMove();
-int min(int depth);
-int max(int depth);
+int min(int depth,int previousBest);
+int max(int depth, int previousBest);
 int evaluate();
 int checkForWinner(int);
 void checkGameOver();
@@ -973,7 +973,7 @@ void makeComMove(){
         board[LOCAL_MOVE[MOVE_TO_ROW]][LOCAL_MOVE[MOVE_TO_COL]] = prevMove;
         resetAllMovesAfterChangeOnBoard();
 
-        score = min(depth+1);
+        score = min(depth+1, best);
 
         board[LOCAL_MOVE[MOVE_TO_ROW]][LOCAL_MOVE[MOVE_TO_COL]] = prevFigure;
         board[LOCAL_MOVE[MOVE_FROM_ROW]][LOCAL_MOVE[MOVE_FROM_COL]] = prevMove;
@@ -1000,7 +1000,7 @@ void makeComMove(){
     showAllMoves(BOTH);
 }
 
-int min(int depth){
+int min(int depth, int previousBest){
     int best = 20000;
     int score;
     int  LOCAL_HUM_MOVE[4];
@@ -1027,7 +1027,7 @@ int min(int depth){
         board[LOCAL_HUM_MOVE[MOVE_TO_ROW]][LOCAL_HUM_MOVE[MOVE_TO_COL]] = prevMove;
         resetAllMovesAfterChangeOnBoard();
 
-        score = max(depth+1);
+        score = max(depth+1, best);
 
         //undo move
         board[LOCAL_HUM_MOVE[MOVE_TO_ROW]][LOCAL_HUM_MOVE[MOVE_TO_COL]] = prevFigure;
@@ -1036,6 +1036,10 @@ int min(int depth){
 
         if(score < best){
             best = score;
+        }
+
+        if(previousBest > best){
+            return best;
         }
         counter++;
         if(counter >= maxMoves){
@@ -1047,7 +1051,7 @@ int min(int depth){
 
 
 
-int max(int depth){
+int max(int depth, int previousBest){
     int best = -20000;
     int score;
     int LOCAL_COM_MOVE[4];
@@ -1072,7 +1076,7 @@ int max(int depth){
         board[LOCAL_COM_MOVE[MOVE_TO_ROW]][LOCAL_COM_MOVE[MOVE_TO_COL]] = prevMove;
         resetAllMovesAfterChangeOnBoard();
 
-        score = max(depth+1);
+        score = min(depth+1, best);
 
         //undo move
         board[LOCAL_COM_MOVE[MOVE_TO_ROW]][LOCAL_COM_MOVE[MOVE_TO_COL]] = prevFigure;
@@ -1081,6 +1085,10 @@ int max(int depth){
 
         if(score >  best){
             best = score;
+        }
+
+        if(previousBest < best){
+            return best;
         }
         counter++;
         if(counter >= maxMoves){
