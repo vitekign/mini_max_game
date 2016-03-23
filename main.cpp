@@ -955,6 +955,11 @@ void resetAllMovesAfterChangeOnBoard(){
     generateAllMoves();
 }
 
+void runIterativeDeepening(){
+    //while timer allows run another level
+
+}
+
 void makeComMove(){
     int best =-20000, depth = 0, score;
     int BEST_MOVE[4], LOCAL_MOVE[4];
