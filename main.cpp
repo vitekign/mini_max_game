@@ -1,27 +1,18 @@
 #include <iostream>
-#include <vector>
-#include <algorithm>
 using namespace std;
 
+#define RUN_TEST 0
 
+#define EMPTY 0
+#define C_WINS 5000
+#define H_WINS  -5000
+#define DRAW 0
+#define GAME_NOT_OVER -1
 
-
-#define RUN_TEST            0
-
-#define H_MOVE 2
-#define C_MOVE 1
-#define EMPTY               0
-#define C_WINS              5000
-#define H_WINS              -5000
-#define DRAW                0
-#define GAME_OVER           -1
-#define GAME_NOT_OVER       -1
-
-
-#define INT_ROW             0
-#define EXT_ROW             1
-#define INT_COL             1
-#define EXT_COL             0
+#define INT_ROW 0
+#define EXT_ROW 1
+#define INT_COL 1
+#define EXT_COL 0
 
 #define ROW 2
 #define COL 3
@@ -56,20 +47,24 @@ enum TURN{
     COM_TURN,
     HUM_TURN,
 };
-
 enum GENERAL{
     COM,
     HUM,
     BOTH,
 };
+
 int BEST_SCORE = 0;
 int NUM_OF_LEAVES = 0;
 
-int numHumMoves = 0;
-int numComMoves = 0;
+int NUM_OF_HUM_MOVES = 0;
+int NUM_OF_COM_MOVES = 0;
+int MAX_MILS_ONE_ITER = 5000;
 
+int COLLAPSE_RECURSION = false;
+chrono::high_resolution_clock::time_point lastTime;
+int DEPTH_FOR_OUTPUT = 0;
 int board[7][7];
-char board_labels[] = {'-', 'T', '~', '*', 'X', 't', '+', '@', 'x'};
+char const board_labels[] = {'-', 'T', '~', '*', 'X', 't', '+', '@', 'x'};
 int moveFromI[2];
 int moveToI[2];
 char moveFromExternal[2];
@@ -87,7 +82,6 @@ int ALL_INDEX = 0;
 int COM_INDEX = 0;
 int HUM_INDEX = 0;
 
-
 int* makeComMove();
 int min(int depth,int previousBest);
 int max(int depth, int previousBest);
@@ -97,29 +91,18 @@ void checkGameOver();
 void getAMove();
 void setupBoard();
 void printBoard();
-
 void decorateRows(int i, int j);
 void decorateColumns();
-
 void convertMoveToInternalRep(char *move);
-
 void convertMoveExternalRep();
-
 bool isMoveLegal();
-
 void generateAllMoves();
-
 void findAllMovesForHumX(int move[]);
-
 void findAllMovesForHumT(int move[]);
-
 /* BOTH | COM | HUM */
 void showAllMoves(int);
-
 bool endOfMoveList(const int *list);
-
 void makeHumMove();
-
 void makeCompMoveOnBoard();
 
 int main() {
@@ -147,7 +130,6 @@ int main() {
     cout << (isMoveLegal() ? "The move is legal" : "The move is illegal");
 #endif
 }
-
 
 void setupBoard(){
     for (int i = 0; i < BRD_LENGTH; i++){
@@ -202,7 +184,6 @@ void labelAdversariesBoards(int i, int j){
 }
 
 void printBoard(){
-
     cout << endl;
     for(int i = 0; i < BRD_LENGTH; i++){
         for (int j = 0; j < BRD_LENGTH; j++){
@@ -371,7 +352,6 @@ void convertMoveExternalRep(){
             convTo[EXT_ROW] = '1';
         }
 
-
         if(convFrom[INT_COL] == 0){
             convTo[EXT_COL] = 'A';
         } else if(convFrom[INT_COL] == 1){
@@ -462,21 +442,19 @@ bool endOfMoveList(int *list){
 }
 
 bool compWins() {
-    if (numComMoves == 0)
+    if (NUM_OF_COM_MOVES == 0)
         return false;
-    if (numHumMoves == 0)
+    if (NUM_OF_HUM_MOVES == 0)
         return true;
-
-    if(board[5][3] != H_D) {
+    if(board[5][3] != H_D)
         return true;
-    }
     return false;
 }
 
 bool humWins(){
-   if(numHumMoves == 0)
+   if(NUM_OF_HUM_MOVES == 0)
        return false;
-    if(numComMoves == 0)
+    if(NUM_OF_COM_MOVES == 0)
         return true;
     if(board[1][3] != C_D)
         return true;
@@ -485,7 +463,7 @@ bool humWins(){
 
 
 int evaluateMoveability(){
-    return numComMoves - numHumMoves;
+    return NUM_OF_COM_MOVES - NUM_OF_HUM_MOVES;
 }
 
 int findTheNumberOfFigures(int side){
@@ -507,26 +485,38 @@ int findTheNumberOfFigures(int side){
     }
 }
 
-int evaluateNumberOfTakenFigures(){
 
+int howFarFromTheOppositeSide(){
+    int humAggressiveness = 0;
+    for(int i = 0; i < NUM_OF_HUM_MOVES; i++){
+        humAggressiveness += allHumanMoves[i][MOVE_FROM_ROW];
+    }
+
+    int comAggressiveness = 0;
+    for(int i = 0; i < NUM_OF_COM_MOVES; i++){
+        comAggressiveness += allCompMoves[i][MOVE_FROM_ROW];
+    }
+
+    return comAggressiveness - humAggressiveness;
 }
 
 int evaluate(){ //STUB  //HEURISTIC
-
     float beatDeathStarWeight = 0;
     if(compWins())
         beatDeathStarWeight = 15;
     if(humWins()){
         beatDeathStarWeight = -15;
     }
-
+    int moveability = evaluateMoveability();
+    int aggressiveness = howFarFromTheOppositeSide();
     generateAllMoves();
-    return (int) (findTheNumberOfFigures(COM) - findTheNumberOfFigures(HUM));  // + beatDeathStarWeight);
+    return  (findTheNumberOfFigures(COM) - findTheNumberOfFigures(HUM))
+            + moveability + aggressiveness;  // + beatDeathStarWeight);
 }
 
 void showAllMoves(int advToShow){
     if(advToShow == BOTH) {
-        for (int i = 0; i < numComMoves; i++) {
+        for (int i = 0; i < NUM_OF_COM_MOVES; i++) {
             if(i%10 == 0){
                 cout << endl << "COM MOVES: ";
             }
@@ -534,7 +524,7 @@ void showAllMoves(int advToShow){
             cout << "..";
 
         }
-        for (int i = 0; i < numHumMoves; i++) {
+        for (int i = 0; i < NUM_OF_HUM_MOVES; i++) {
             if(i%10 == 0){
                 cout << endl << "HUM MOVES: ";
             }
@@ -543,7 +533,7 @@ void showAllMoves(int advToShow){
         }
     }
     else if(advToShow == COM){
-        for (int i = 0; i < numComMoves; i++) {
+        for (int i = 0; i < NUM_OF_COM_MOVES; i++) {
             if(i%10 == 0){
                 cout << endl << "COM MOVES: ";
             }
@@ -551,7 +541,7 @@ void showAllMoves(int advToShow){
             cout << "..";
         }
     } else if(advToShow == HUM){
-        for (int i = 0; i < numHumMoves; i++) {
+        for (int i = 0; i < NUM_OF_HUM_MOVES; i++) {
             if(i%10 == 0){
                 cout << endl << "HUM MOVES: ";
             }
@@ -595,10 +585,10 @@ void addToDatabase(int *move) {
     }
 
     if(allMoves[ALL_INDEX][MOVE_WHOSE_MOVE] == COM_TURN){
-        memcpy(&allCompMoves[numComMoves++], move, sizeof(int) * 6);
+        memcpy(&allCompMoves[NUM_OF_COM_MOVES++], move, sizeof(int) * 6);
     }
     if(allMoves[ALL_INDEX][MOVE_WHOSE_MOVE] == HUM_TURN){
-        memcpy(&allHumanMoves[numHumMoves++], move, sizeof(int) * 6);
+        memcpy(&allHumanMoves[NUM_OF_HUM_MOVES++], move, sizeof(int) * 6);
     }
     ALL_INDEX++;
 }
@@ -747,8 +737,8 @@ void generateAllMoves(){
     memset(allMoves, -1, sizeof(allMoves[0][0]) * 200 * 4);
     memset(allCompMoves, -1, sizeof(allMoves[0][0]) * 200 * 4);
     memset(allHumanMoves, -1, sizeof(allMoves[0][0]) * 200 * 4);
-    numHumMoves = 0;
-    numComMoves = 0;
+    NUM_OF_HUM_MOVES = 0;
+    NUM_OF_COM_MOVES = 0;
     ALL_INDEX = HUM_INDEX = COM_INDEX = 0;
 
     int move[4];
@@ -960,15 +950,30 @@ void resetAllMovesAfterChangeOnBoard(){
     generateAllMoves();
 }
 
-void runIterativeDeepening(){
-    //while timer allows run another level
-
-}
-
 void makeCompMoveOnBoard(){
-    int *bestMove = makeComMove();
+    lastTime = std::chrono::high_resolution_clock::now();
+    COLLAPSE_RECURSION = false;
+    DEPTH_FOR_OUTPUT = 0;
+    int numberOfLeaves = 0;
+    int i = 2;
+    int *bestMove;
+    int *lastMove;
+    while(true){
+        MAXDEPTH = i;
+        NUM_OF_LEAVES = 0;
+        lastMove = makeComMove();
+        if(COLLAPSE_RECURSION == false){
+            bestMove = lastMove;
+            numberOfLeaves = NUM_OF_LEAVES;
+        }else {
+            break;
+        }
+        i++;
+    }
+
     cout << endl << "Opponent's move is: " << convertMoveExternalRep(bestMove) << endl << "  best: " << BEST_SCORE << endl;
-    cout << endl << "The algorithm went through " << NUM_OF_LEAVES << " calls";
+    cout << endl << "The algorithm went through " << numberOfLeaves << " calls";
+    cout << endl << "The maximum depth was: " << DEPTH_FOR_OUTPUT << endl;
     int prevMove = board[bestMove[MOVE_FROM_ROW]][bestMove[MOVE_FROM_COL]];
     board[bestMove[MOVE_FROM_ROW]][bestMove[MOVE_FROM_COL]] = EMPTY;
     board[bestMove[MOVE_TO_ROW]][bestMove[MOVE_TO_COL]] = prevMove;
@@ -978,12 +983,18 @@ void makeCompMoveOnBoard(){
 }
 
 int* makeComMove(){
+    auto currentTime = std::chrono::high_resolution_clock::now();
+    if (std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastTime).count() > MAX_MILS_ONE_ITER)
+    {
+        COLLAPSE_RECURSION = true;
+        return new int[0];
+    }
     NUM_OF_LEAVES++;
     int best =-20000, depth = 0, score;
     int BEST_MOVE[4], LOCAL_MOVE[4];
     int counter = 0;
 
-    int maxMoves = numComMoves;
+    int maxMoves = NUM_OF_COM_MOVES;
     for(;;){
         LOCAL_MOVE[0] = allCompMoves[counter][0];
         LOCAL_MOVE[1] = allCompMoves[counter][1];
@@ -1021,6 +1032,12 @@ int* makeComMove(){
 }
 
 int min(int depth, int previousBest){
+    auto currentTime = std::chrono::high_resolution_clock::now();
+    if (std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastTime).count() > MAX_MILS_ONE_ITER)
+    {
+        COLLAPSE_RECURSION = true;
+        return false;
+    }
     NUM_OF_LEAVES++;
     int best = 20000;
     int score;
@@ -1031,9 +1048,12 @@ int min(int depth, int previousBest){
         return checkForWinner(depth);
     }
      //(evaluate() + depth);
-    if(depth == MAXDEPTH) return (evaluate());
+    if(depth == MAXDEPTH) {
+        depth > DEPTH_FOR_OUTPUT ? DEPTH_FOR_OUTPUT += 1 : 0 + 0 + 0 + 0 + 0; //try to figure out... :-)
+        return (evaluate());
+    }
 
-    int maxMoves = numHumMoves;
+    int maxMoves = NUM_OF_HUM_MOVES;
     for(;;){
         generateAllMoves();
         LOCAL_HUM_MOVE[0] = allHumanMoves[counter][0];
@@ -1055,6 +1075,14 @@ int min(int depth, int previousBest){
         board[LOCAL_HUM_MOVE[MOVE_FROM_ROW]][LOCAL_HUM_MOVE[MOVE_FROM_COL]] = prevMove;
         resetAllMovesAfterChangeOnBoard();
 
+//        if(score > 15000 && best > 15000){
+//          if(score > best){
+//              best = score;
+//          }
+//        } else if(score < best){
+//            best = score;
+//        }
+
         if(score < best){
             best = score;
         }
@@ -1070,21 +1098,28 @@ int min(int depth, int previousBest){
     return best;// + depth;
 }
 
-
-
 int max(int depth, int previousBest){
+    auto currentTime = std::chrono::high_resolution_clock::now();
+    if (std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastTime).count() > MAX_MILS_ONE_ITER)
+    {
+        COLLAPSE_RECURSION = true;
+        return false;
+    }
     NUM_OF_LEAVES++;
     int best = -20000;
     int score;
     int LOCAL_COM_MOVE[4];
     int counter = 0;
+
     if(checkForWinner(depth) != GAME_NOT_OVER) {
-       // cout << "Current score is: " << evaluate() << endl;
         return checkForWinner(depth);
     }
-    if(depth == MAXDEPTH) return (evaluate());
+    if(depth == MAXDEPTH){
+        depth > DEPTH_FOR_OUTPUT ? DEPTH_FOR_OUTPUT += 1 : 0 + 0 + 0 + 0 + 0; //try to figure out... :-)
+        return (evaluate());
+    }
 
-    int maxMoves = numComMoves;
+    int maxMoves = NUM_OF_COM_MOVES;
 
     for(;;){
         LOCAL_COM_MOVE[0] = allCompMoves[counter][0];
@@ -1122,6 +1157,7 @@ int max(int depth, int previousBest){
 
 int checkForWinner(int depth){
     if (compWins()){
+        //cout << "\nDepth is : "  << depth << endl;
         return C_WINS - depth; //computer wins 5000
     }
 
