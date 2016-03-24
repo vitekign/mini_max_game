@@ -494,7 +494,7 @@ int howFarFromTheOppositeSide(){
 
     int comAggressiveness = 0;
     for(int i = 0; i < NUM_OF_COM_MOVES; i++){
-        comAggressiveness += allCompMoves[i][MOVE_FROM_ROW];
+        comAggressiveness += (BRD_LENGTH - 1 - allCompMoves[i][MOVE_FROM_ROW]);
     }
 
     return comAggressiveness - humAggressiveness;
@@ -507,8 +507,10 @@ int evaluate(){ //STUB  //HEURISTIC
     if(humWins()){
         beatDeathStarWeight = -15;
     }
-    int moveability = evaluateMoveability();
-    int aggressiveness = howFarFromTheOppositeSide();
+    int moveability = 0;
+    moveability = evaluateMoveability();
+    int aggressiveness = 0;
+    aggressiveness = howFarFromTheOppositeSide();
     generateAllMoves();
     return  (findTheNumberOfFigures(COM) - findTheNumberOfFigures(HUM))
             + moveability + aggressiveness;  // + beatDeathStarWeight);
@@ -971,12 +973,14 @@ void makeCompMoveOnBoard(){
         i++;
     }
 
-    cout << endl << "Opponent's move is: " << convertMoveExternalRep(bestMove) << endl << "  best: " << BEST_SCORE << endl;
+    cout << endl << "Opponent's move is: " << convertMoveExternalRep(bestMove) << endl << "Best: " << BEST_SCORE << endl;
     cout << endl << "The algorithm went through " << numberOfLeaves << " calls";
     cout << endl << "The maximum depth was: " << DEPTH_FOR_OUTPUT << endl;
+
     int prevMove = board[bestMove[MOVE_FROM_ROW]][bestMove[MOVE_FROM_COL]];
     board[bestMove[MOVE_FROM_ROW]][bestMove[MOVE_FROM_COL]] = EMPTY;
     board[bestMove[MOVE_TO_ROW]][bestMove[MOVE_TO_COL]] = prevMove;
+
     resetAllMovesAfterChangeOnBoard();
     printBoard();
     showAllMoves(BOTH);
