@@ -1045,7 +1045,7 @@ int min(int depth, int alpha){
         return checkForWinner(depth);
     }
     if(depth == MAXDEPTH) {
-        depth > DEPTH_FOR_OUTPUT ? DEPTH_FOR_OUTPUT += 1 : 0 + 0 + 0 + 0 + 0; //try to figure out... :-)
+        DEPTH_FOR_OUTPUT = MAXDEPTH;
         return (evaluate());
     }
 
@@ -1083,7 +1083,7 @@ int min(int depth, int alpha){
             break;
         }
     }
-    return beta;// + depth;
+    return beta;
 }
 
 int max(int depth, int beta){
@@ -1100,12 +1100,10 @@ int max(int depth, int beta){
     int counter = 0;
 
     if(checkForWinner(depth) != GAME_NOT_OVER) {
-//        cout << "Current score is: " << checkForWinner(depth)<< endl;
-//        printBoard();
         return checkForWinner(depth);
     }
     if(depth == MAXDEPTH){
-        depth > DEPTH_FOR_OUTPUT ? DEPTH_FOR_OUTPUT += 1 : 0 + 0 + 0 + 0 + 0; //try to figure out... :-)
+        DEPTH_FOR_OUTPUT = MAXDEPTH;
         return (evaluate());
     }
 
