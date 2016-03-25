@@ -501,19 +501,13 @@ int howFarFromTheOppositeSide(){
 }
 
 int evaluate(){ //STUB  //HEURISTIC
-    float beatDeathStarWeight = 0;
-    if(compWins())
-        beatDeathStarWeight = 15;
-    if(humWins()){
-        beatDeathStarWeight = -15;
-    }
     int moveability = 0;
-    moveability = evaluateMoveability();
+    moveability = evaluateMoveability()/2;
     int aggressiveness = 0;
-    aggressiveness = howFarFromTheOppositeSide();
+    aggressiveness = howFarFromTheOppositeSide()/2;
     generateAllMoves();
-    return  (findTheNumberOfFigures(COM) - findTheNumberOfFigures(HUM))
-            + moveability + aggressiveness;  // + beatDeathStarWeight);
+    return  (findTheNumberOfFigures(COM) - findTheNumberOfFigures(HUM)) * 100
+            + (moveability * 10) + (aggressiveness * 30);
 }
 
 void showAllMoves(int advToShow){
@@ -1048,7 +1042,8 @@ int min(int depth, int previousBest){
     int  LOCAL_HUM_MOVE[4];
     int counter = 0;
     if(checkForWinner(depth) != GAME_NOT_OVER) {
-        //cout << "Current score is: " << evaluate() << endl;
+//        cout << "Current score is: " << checkForWinner(depth)<< endl;
+//        printBoard();
         return checkForWinner(depth);
     }
      //(evaluate() + depth);
@@ -1116,6 +1111,8 @@ int max(int depth, int previousBest){
     int counter = 0;
 
     if(checkForWinner(depth) != GAME_NOT_OVER) {
+//        cout << "Current score is: " << checkForWinner(depth)<< endl;
+//        printBoard();
         return checkForWinner(depth);
     }
     if(depth == MAXDEPTH){
