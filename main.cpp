@@ -83,8 +83,8 @@ int COM_INDEX = 0;
 int HUM_INDEX = 0;
 
 int* makeComMove();
-int min(int depth,int previousBest);
-int max(int depth, int previousBest);
+int min(int depth,int alpha);
+int max(int depth, int beta);
 int evaluate();
 int checkForWinner(int);
 void checkGameOver();
@@ -1029,7 +1029,7 @@ int* makeComMove(){
     return returnValue;
 }
 
-int min(int depth, int previousBest){
+int min(int depth, int alpha){
     auto currentTime = std::chrono::high_resolution_clock::now();
     if (std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastTime).count() > MAX_MILS_ONE_ITER)
     {
@@ -1037,16 +1037,13 @@ int min(int depth, int previousBest){
         return false;
     }
     NUM_OF_LEAVES++;
-    int best = 20000;
+    int beta = 20000;
     int score;
     int  LOCAL_HUM_MOVE[4];
     int counter = 0;
     if(checkForWinner(depth) != GAME_NOT_OVER) {
-//        cout << "Current score is: " << checkForWinner(depth)<< endl;
-//        printBoard();
         return checkForWinner(depth);
     }
-     //(evaluate() + depth);
     if(depth == MAXDEPTH) {
         depth > DEPTH_FOR_OUTPUT ? DEPTH_FOR_OUTPUT += 1 : 0 + 0 + 0 + 0 + 0; //try to figure out... :-)
         return (evaluate());
@@ -1067,37 +1064,29 @@ int min(int depth, int previousBest){
         board[LOCAL_HUM_MOVE[MOVE_TO_ROW]][LOCAL_HUM_MOVE[MOVE_TO_COL]] = prevMove;
         resetAllMovesAfterChangeOnBoard();
 
-        score = max(depth+1, best);
+        score = max(depth+1, beta);
 
         //undo move
         board[LOCAL_HUM_MOVE[MOVE_TO_ROW]][LOCAL_HUM_MOVE[MOVE_TO_COL]] = prevFigure;
         board[LOCAL_HUM_MOVE[MOVE_FROM_ROW]][LOCAL_HUM_MOVE[MOVE_FROM_COL]] = prevMove;
         resetAllMovesAfterChangeOnBoard();
 
-//        if(score > 15000 && best > 15000){
-//          if(score > best){
-//              best = score;
-//          }
-//        } else if(score < best){
-//            best = score;
-//        }
-
-        if(score < best){
-            best = score;
+        if(score < beta){
+            beta = score;
         }
 
-        if(previousBest > best){
-            return best;
+        if(alpha >= beta){
+            return beta;
         }
         counter++;
         if(counter >= maxMoves){
             break;
         }
     }
-    return best;// + depth;
+    return beta;// + depth;
 }
 
-int max(int depth, int previousBest){
+int max(int depth, int beta){
     auto currentTime = std::chrono::high_resolution_clock::now();
     if (std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastTime).count() > MAX_MILS_ONE_ITER)
     {
@@ -1105,7 +1094,7 @@ int max(int depth, int previousBest){
         return false;
     }
     NUM_OF_LEAVES++;
-    int best = -20000;
+    int alpha = -20000;
     int score;
     int LOCAL_COM_MOVE[4];
     int counter = 0;
@@ -1134,26 +1123,26 @@ int max(int depth, int previousBest){
         board[LOCAL_COM_MOVE[MOVE_TO_ROW]][LOCAL_COM_MOVE[MOVE_TO_COL]] = prevMove;
         resetAllMovesAfterChangeOnBoard();
 
-        score = min(depth+1, best);
+        score = min(depth+1, alpha);
 
         //undo move
         board[LOCAL_COM_MOVE[MOVE_TO_ROW]][LOCAL_COM_MOVE[MOVE_TO_COL]] = prevFigure;
         board[LOCAL_COM_MOVE[MOVE_FROM_ROW]][LOCAL_COM_MOVE[MOVE_FROM_COL]] = prevMove;
         resetAllMovesAfterChangeOnBoard();
 
-        if(score >  best){
-            best = score;
+        if(score >  alpha){
+            alpha = score;
         }
 
-        if(previousBest < best){
-            return best;
+        if(alpha >= beta){
+            return alpha;
         }
         counter++;
         if(counter >= maxMoves){
             break;
         }
     }
-    return best;// - depth;
+    return alpha;
 }
 
 int checkForWinner(int depth){
