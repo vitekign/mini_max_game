@@ -4,13 +4,16 @@
 using namespace std;
 
 #define RUN_TEST 0
-#define RUN_KILLER 1
+#define RUN_KILLER_HEURISTIC 0
+#define RUN_ALPHA_BETA_OPTIMIZATION 0
+#define RUN_WITH_MOVE_VALIDATION 0
 
 #define EMPTY 0
 #define C_WINS 5000
 #define H_WINS  -5000
 #define DRAW 0
 #define GAME_NOT_OVER -1
+
 
 #define INT_ROW 0
 #define EXT_ROW 1
@@ -33,11 +36,12 @@ using namespace std;
 #define H_X 8
 
 
-//TODO: add constraints concerning horizontal moves of T Fighter
-//TODO: check if entered move is lelag/illegal
+//TODO: add constraints concerning horizontal moves of T Fighter   +
+//TODO: check if entered move is legal/illegal        +
 //TODO: convert input/output so other computer can understand
-//TODO: get rid of global variables and encpsulating them in standalone functions
-
+//TODO: get rid of global variables and encapsulating them in standalone functions
+//TODO: refactor killer heuristic so it runs according with T Fighter horizontal constraints
+//TODO: add logic to accomodate the process of who's making the first move
 
 #define DATABASE_DEPTH 200
 #define DATABASE_WIDTH 7
@@ -220,11 +224,21 @@ void printBoard(){
     decorateColumns();
 }
 
-bool justEnteredMoveLegal(){
-    return !(moveFromI[0] == -1 ||
+bool moveLegal(){
+    if (moveFromI[0] == -1 ||
         moveFromI[1] == -1 ||
         moveToI[0] == -1 ||
-        moveToI[1] == -1);
+        moveToI[1] == -1)
+        return false;
+
+    for(int i = 0; i < NUM_OF_HUM_MOVES; i++){
+       if (moveFromI[0] == allHumanMoves[i][MOVE_FROM_ROW] &&
+           moveFromI[1] == allHumanMoves[i][MOVE_FROM_COL] &&
+           moveToI[0] == allHumanMoves[i][MOVE_TO_ROW] &&
+           moveToI[1] == allHumanMoves[i][MOVE_TO_COL])
+                return true;
+    }
+    return false;
 }
 
 void convertMoveToInternalRep(char *move){
@@ -953,12 +967,13 @@ void getAMove(){
     move[4] = '\0';
     cout << endl;
     convertMoveToInternalRep(move);
-//    if(!justEnteredMoveLegal()) {
-//        cout << "Entered move is illegal. Please, enter the right move" << endl;
-//        getAMove();
-//    } else {
-//        //TODO: add logic so it goes through all of the moves and checks if it's legal
-//    }
+#if RUN_WITH_MOVE_VALIDATION
+    if(!moveLegal()) {
+        cout << "The move is illegal. Please, come up with a right one" << endl;
+        getAMove();
+        return;
+    }
+#endif
     HUM_MOVE[0] = moveFromI[0];
     HUM_MOVE[1] = moveFromI[1];
     HUM_MOVE[2] = moveToI[0];
@@ -983,6 +998,8 @@ void getAMove(){
 #endif
     }
 }
+
+
 
 void makeHumMove(){
     int prevMove =  board[HUM_MOVE[MOVE_FROM_ROW]][HUM_MOVE[MOVE_FROM_COL]];
@@ -1057,10 +1074,8 @@ void makeCompMoveOnBoard(){
 }
 
 int* makeComMove(){
-
     auto currentTime = std::chrono::high_resolution_clock::now();
-    if (std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastTime).count() > MAX_MILS_ONE_ITER)
-    {
+    if (std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastTime).count() > MAX_MILS_ONE_ITER) {
         COLLAPSE_RECURSION = true;
         return new int[0];
     }
@@ -1089,8 +1104,6 @@ int* makeComMove(){
 
         resetAllMovesAfterChangeOnBoard();
 
-
-
         if(prevMove == C_T && allCompMoves[counter][VER_HOR] == HORIZ)
             COM_T_FIGHTER_HOR_MOVE = true;
         else
@@ -1105,8 +1118,6 @@ int* makeComMove(){
         COM_T_FIGHTER_HOR_MOVE = LOC_COM_T_FIGHTER_HOR_MOVE;
 
         resetAllMovesAfterChangeOnBoard();
-
-        //allCompMoves[counter][VER_HOR] = COMP_INITIAL_VER_HOR_FLAG;
 
         if(score > best){
             BEST_MOVE[0] = allCompMoves[counter][0];
@@ -1127,17 +1138,6 @@ int* makeComMove(){
     int *returnValue = (int*)calloc(7, sizeof(int));
     memcpy(returnValue, BEST_MOVE, sizeof(int) * 7);
     return returnValue;
-}
-
-int findKillerMoveInAllHumMoves(KillerMove *killerMove){
-    for(int i = 0; i < NUM_OF_HUM_MOVES; i++){
-        if (allHumanMoves[i][MOVE_TO_ROW] == killerMove->moveTo[0]) {
-            if (allHumanMoves[i][MOVE_TO_COL] == killerMove->moveTo[1]) {
-                return i;
-            }
-        }
-    }
-    return -100000;
 }
 
 int min(int depth, int previousBest){
@@ -1167,9 +1167,13 @@ int min(int depth, int previousBest){
 
     int maxMoves = NUM_OF_HUM_MOVES;
 
-#if RUN_KILLER
+#if RUN_KILLER_HEURISTIC
     if(!killerMove[depth].empty){
         if(int numOfMove = findKillerMoveInAllHumMoves(&killerMove[depth]) != -100000){
+
+            LOC_COM_T_FIGHTER_HOR_MOVE = COM_T_FIGHTER_HOR_MOVE;
+            LOC_HUM_T_FIGHTER_HOR_MOVE = HUM_T_FIGHTER_HOR_MOVE;
+
             LOCAL_HUM_MOVE[0] = allHumanMoves[numOfMove][0];
             LOCAL_HUM_MOVE[1] = allHumanMoves[numOfMove][1];
             LOCAL_HUM_MOVE[2] = allHumanMoves[numOfMove][2];
@@ -1181,11 +1185,20 @@ int min(int depth, int previousBest){
             board[LOCAL_HUM_MOVE[MOVE_TO_ROW]][LOCAL_HUM_MOVE[MOVE_TO_COL]] = prevMove;
             resetAllMovesAfterChangeOnBoard();
 
+            if(prevMove == H_T && allHumanMoves[counter][VER_HOR] == HORIZ)
+                HUM_T_FIGHTER_HOR_MOVE = true;
+            else
+                HUM_T_FIGHTER_HOR_MOVE = false;
+
             score = min(depth+1, best);
 
             //undo move
             board[LOCAL_HUM_MOVE[MOVE_TO_ROW]][LOCAL_HUM_MOVE[MOVE_TO_COL]] = prevFigure;
             board[LOCAL_HUM_MOVE[MOVE_FROM_ROW]][LOCAL_HUM_MOVE[MOVE_FROM_COL]] = prevMove;
+
+            HUM_T_FIGHTER_HOR_MOVE = LOC_COM_T_FIGHTER_HOR_MOVE;
+            COM_T_FIGHTER_HOR_MOVE = LOC_HUM_T_FIGHTER_HOR_MOVE;
+
             resetAllMovesAfterChangeOnBoard();
 
             if(score < best){
@@ -1247,12 +1260,14 @@ int min(int depth, int previousBest){
         }
 
         if(previousBest > best){
-#if RUN_KILLER
+#if RUN_KILLER_HEURISTIC
             killerMove[depth].empty = false;
             killerMove[depth].moveTo[0] = LOCAL_HUM_MOVE[MOVE_TO_ROW];
             killerMove[depth].moveTo[1] = LOCAL_HUM_MOVE[MOVE_TO_COL];
 #endif
+#if RUN_ALPHA_BETA_OPTIMIZATION
             return best;
+#endif
         }
         counter++;
         if(counter >= maxMoves){
@@ -1288,7 +1303,6 @@ int max(int depth, int previousBest){
 
     bool LOC_HUM_T_FIGHTER_HOR_MOVE;
     bool LOC_COM_T_FIGHTER_HOR_MOVE;
-    int COM_INITIAL_VER_HOR_FLAG;
 
     if(checkForWinner(depth) != GAME_NOT_OVER) {
         return checkForWinner(depth);
@@ -1299,9 +1313,14 @@ int max(int depth, int previousBest){
     }
 
     int maxMoves = NUM_OF_COM_MOVES;
-#if RUN_KILLER
+#if RUN_KILLER_HEURISTIC
     if(!killerMove[depth].empty){
         if(int numOfMove = findKillerMoveInAllCompMoves(&killerMove[depth]) != -100000){
+
+            LOC_COM_T_FIGHTER_HOR_MOVE = COM_T_FIGHTER_HOR_MOVE;
+            LOC_HUM_T_FIGHTER_HOR_MOVE = HUM_T_FIGHTER_HOR_MOVE;
+
+
             LOCAL_COM_MOVE[0] = allCompMoves[numOfMove][0];
             LOCAL_COM_MOVE[1] = allCompMoves[numOfMove][1];
             LOCAL_COM_MOVE[2] = allCompMoves[numOfMove][2];
@@ -1313,11 +1332,20 @@ int max(int depth, int previousBest){
             board[LOCAL_COM_MOVE[MOVE_TO_ROW]][LOCAL_COM_MOVE[MOVE_TO_COL]] = prevMove;
             resetAllMovesAfterChangeOnBoard();
 
+            if(prevMove == C_T && allCompMoves[counter][VER_HOR] == HORIZ)
+                COM_T_FIGHTER_HOR_MOVE = true;
+            else
+                COM_T_FIGHTER_HOR_MOVE = false;
+
             score = min(depth+1, best);
 
             //undo move
             board[LOCAL_COM_MOVE[MOVE_TO_ROW]][LOCAL_COM_MOVE[MOVE_TO_COL]] = prevFigure;
             board[LOCAL_COM_MOVE[MOVE_FROM_ROW]][LOCAL_COM_MOVE[MOVE_FROM_COL]] = prevMove;
+
+            HUM_T_FIGHTER_HOR_MOVE = LOC_HUM_T_FIGHTER_HOR_MOVE;
+            COM_T_FIGHTER_HOR_MOVE = LOC_COM_T_FIGHTER_HOR_MOVE;
+
             resetAllMovesAfterChangeOnBoard();
 
             if(score >  best){
@@ -1349,8 +1377,6 @@ int max(int depth, int previousBest){
 
         resetAllMovesAfterChangeOnBoard();
 
-
-
         if(prevMove == C_T && allCompMoves[counter][VER_HOR] == HORIZ)
             COM_T_FIGHTER_HOR_MOVE = true;
         else
@@ -1373,12 +1399,14 @@ int max(int depth, int previousBest){
         }
 
         if(previousBest < best){
-#if RUN_KILLER
+#if RUN_KILLER_HEURISTIC
             killerMove[depth].empty = false;
             killerMove[depth].moveTo[0] = LOCAL_COM_MOVE[MOVE_TO_ROW];
             killerMove[depth].moveTo[1] = LOCAL_COM_MOVE[MOVE_TO_COL];
 #endif
+#if RUN_ALPHA_BETA_OPTIMIZATION
             return best;
+#endif
         }
 
         counter++;
