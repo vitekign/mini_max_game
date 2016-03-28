@@ -47,8 +47,8 @@ using namespace std;
 #define DATABASE_WIDTH 7
 
 struct KillerMove{
-    int moveTo[2];
-    bool empty;
+    int moveTo[2][2];
+    bool empty[2];
 };
 KillerMove killerMove[50];
 
@@ -1022,6 +1022,12 @@ void resetAllMovesAfterChangeOnBoard(){
 }
 
 void makeCompMoveOnBoard(){
+
+    for(int i = 0; i < 50; i++){
+        killerMove[i].empty[0] = true;
+        killerMove[i].empty[1] = true;
+    }
+
     lastTime = std::chrono::high_resolution_clock::now();
     COLLAPSE_RECURSION = false;
     DEPTH_FOR_OUTPUT = 0;
@@ -1141,9 +1147,18 @@ int* makeComMove(){
 
 int findKillerMoveInAllHumMoves(KillerMove *killerMove){
     for(int i = 0; i < NUM_OF_HUM_MOVES; i++){
-        if (allHumanMoves[i][MOVE_TO_ROW] == killerMove->moveTo[0]) {
-            if (allHumanMoves[i][MOVE_TO_COL] == killerMove->moveTo[1]) {
-                return i;
+        if(killerMove->empty[0] = false) {
+            if (allHumanMoves[i][MOVE_TO_ROW] == killerMove->moveTo[0][0]) {
+                if (allHumanMoves[i][MOVE_TO_COL] == killerMove->moveTo[0][1]) {
+                    return i;
+                }
+            }
+        }
+        if(killerMove->empty[1] = false) {
+            if (allHumanMoves[i][MOVE_TO_ROW] == killerMove->moveTo[1][0]) {
+                if (allHumanMoves[i][MOVE_TO_COL] == killerMove->moveTo[1][1]) {
+                    return i;
+                }
             }
         }
     }
@@ -1176,6 +1191,9 @@ int min(int depth, int previousBest){
     }
 
     int maxMoves = NUM_OF_HUM_MOVES;
+
+
+
 
 #if RUN_KILLER_HEURISTIC
     if(!killerMove[depth].empty){
@@ -1272,9 +1290,14 @@ int min(int depth, int previousBest){
 
         if(previousBest > best){
 #if RUN_KILLER_HEURISTIC
-            killerMove[depth].empty = false;
-            killerMove[depth].moveTo[0] = LOCAL_HUM_MOVE[MOVE_TO_ROW];
-            killerMove[depth].moveTo[1] = LOCAL_HUM_MOVE[MOVE_TO_COL];
+            if(killerMove[depth].empty[1] = false){
+                killerMove[depth].moveTo[0][0] = killerMove[depth].moveTo[1][0];
+                killerMove[depth].moveTo[0][1] = killerMove[depth].moveTo[1][1];
+                killerMove[depth].empty[0] = false;
+            }
+            killerMove[depth].moveTo[1][0] = LOCAL_HUM_MOVE[MOVE_TO_ROW];
+            killerMove[depth].moveTo[1][1] = LOCAL_HUM_MOVE[MOVE_TO_COL];
+            killerMove[depth].empty[1] = false;
 #endif
 #if RUN_ALPHA_BETA_OPTIMIZATION
             return best;
@@ -1290,9 +1313,18 @@ int min(int depth, int previousBest){
 
 int findKillerMoveInAllCompMoves(KillerMove *killerMove){
     for(int i = 0; i < NUM_OF_COM_MOVES; i++){
-        if (allCompMoves[i][MOVE_TO_ROW] == killerMove->moveTo[0]) {
-            if (allCompMoves[i][MOVE_TO_COL] == killerMove->moveTo[1]) {
-                return i;
+        if(killerMove->empty[0] = false) {
+            if (allCompMoves[i][MOVE_TO_ROW] == killerMove->moveTo[0][0]) {
+                if (allCompMoves[i][MOVE_TO_COL] == killerMove->moveTo[0][1]) {
+                    return i;
+                }
+            }
+        }
+        if(killerMove->empty[1] = false) {
+            if (allCompMoves[i][MOVE_TO_ROW] == killerMove->moveTo[1][0]) {
+                if (allCompMoves[i][MOVE_TO_COL] == killerMove->moveTo[1][1]) {
+                    return i;
+                }
             }
         }
     }
@@ -1411,9 +1443,14 @@ int max(int depth, int previousBest){
 
         if(previousBest < best){
 #if RUN_KILLER_HEURISTIC
-            killerMove[depth].empty = false;
-            killerMove[depth].moveTo[0] = LOCAL_COM_MOVE[MOVE_TO_ROW];
-            killerMove[depth].moveTo[1] = LOCAL_COM_MOVE[MOVE_TO_COL];
+            if(killerMove[depth].empty[1] = false) {
+                killerMove[depth].moveTo[0][0] = killerMove[depth].moveTo[1][0];
+                killerMove[depth].moveTo[0][1] = killerMove[depth].moveTo[1][1];
+                killerMove[depth].empty[0] = false;
+            }
+            killerMove[depth].moveTo[1][0] = LOCAL_COM_MOVE[MOVE_TO_ROW];
+            killerMove[depth].moveTo[1][1] = LOCAL_COM_MOVE[MOVE_TO_COL];
+            killerMove[depth].empty[1] = false;
 #endif
 #if RUN_ALPHA_BETA_OPTIMIZATION
             return best;
