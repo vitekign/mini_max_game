@@ -38,10 +38,10 @@ using namespace std;
 
 //TODO: add constraints concerning horizontal moves of T Fighter   +
 //TODO: check if entered move is legal/illegal        +
-//TODO: convert input/output so other computer can understand
-//TODO: get rid of global variables and encapsulating them in standalone functions
-//TODO: refactor killer heuristic so it runs according with T Fighter horizontal constraints
-//TODO: add logic to accomodate the process of who's making the first move
+//TODO: convert input/output so other computer can understand  -
+//TODO: get rid of global variables and encapsulate them in standalone functions
+//TODO: refactor killer heuristic so it runs according with T Fighter horizontal constraints     +
+//TODO: add logic to accommodate the process of who's making the first move  -
 
 #define DATABASE_DEPTH 200
 #define DATABASE_WIDTH 7
