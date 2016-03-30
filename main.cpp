@@ -4,16 +4,15 @@
 using namespace std;
 
 #define RUN_TEST 0
-#define RUN_KILLER_HEURISTIC 1
+#define RUN_KILLER_HEURISTIC 0
 #define RUN_ALPHA_BETA_OPTIMIZATION 1
-#define RUN_WITH_MOVE_VALIDATION 1
+#define RUN_WITH_MOVE_VALIDATION 0
+#define RUN_WITH_ADDITIONAL_OUTPUT 1
 
-#define EMPTY 0
+#define EMPTY  0
 #define C_WINS 5000
-#define H_WINS  -5000
-#define DRAW 0
+#define H_WINS -5000
 #define GAME_NOT_OVER -1
-
 
 #define INT_ROW 0
 #define EXT_ROW 1
@@ -23,7 +22,6 @@ using namespace std;
 #define ROW 2
 #define COL 3
 
-/* BOARD */
 #define BRD_LENGTH  7
 #define C_T 1
 #define C_W 2
@@ -38,10 +36,10 @@ using namespace std;
 
 //TODO: add constraints concerning horizontal moves of T Fighter   +
 //TODO: check if entered move is legal/illegal        +
-//TODO: convert input/output so other computer can understand  -
+//TODO: convert input/output so other computer can understand  +
 //TODO: get rid of global variables and encapsulate them in standalone functions
 //TODO: refactor killer heuristic so it runs according with T Fighter horizontal constraints     +
-//TODO: add logic to accommodate the process of who's making the first move  -
+//TODO: add logic to accommodate the process of who's making the first move  +
 
 #define DATABASE_DEPTH 200
 #define DATABASE_WIDTH 7
@@ -132,20 +130,47 @@ void makeCompMoveOnBoard();
 
 int findKillerMoveInAllCompMoves(KillerMove *killerMove);
 
+bool humanMovesFirst(){
+    int tempInputBuffer = 0;
+    cout << "Please, specify who's making the first move:\n";
+    cout << "1 - Computer\n";
+    cout << "2 - Human\n";
+    cin >> tempInputBuffer;
+    if((tempInputBuffer != 1) && (tempInputBuffer != 2)){
+        cout << "Please, specify the right choice\n";
+        humanMovesFirst();
+    }
+    if(tempInputBuffer == 2)
+        return true;
+    return false;
+}
+
 int main() {
+    bool humanMoveFirst = humanMovesFirst();
+    cout << humanMoveFirst << endl;
     setupBoard();
     printBoard();
     generateAllMoves();
     showAllMoves(BOTH);
     for(;;){
-        getAMove();
-        makeHumMove();
-        checkGameOver();
-        printBoard();
-        generateAllMoves();
-        showAllMoves(BOTH);
-        makeCompMoveOnBoard();
-        checkGameOver();
+        if(humanMoveFirst) {
+            getAMove();
+            makeHumMove();
+            checkGameOver();
+            printBoard();
+            generateAllMoves();
+            showAllMoves(BOTH);
+            makeCompMoveOnBoard();
+            checkGameOver();
+        } else {
+            generateAllMoves();
+            makeCompMoveOnBoard();
+            checkGameOver();
+            getAMove();
+            makeHumMove();
+            checkGameOver();
+            printBoard();
+        }
     }
 #if RUN_TEST
     convertMoveToInternalRep("A1B4");
@@ -543,8 +568,6 @@ int evaluate(){
 
     return  (findTheNumberOfFigures(COM) - findTheNumberOfFigures(HUM))*200 + moveability*2 + aggressiveness;
 
-
-
 //    generateAllMoves();
 //    if(side == COM)
 //    return  (findTheNumberOfFigures(COM) - findTheNumberOfFigures(HUM)) * 100
@@ -633,9 +656,8 @@ void addToDatabase(int *move) {
     ALL_INDEX++;
 }
 
-/************************************/
+
 /*      Find computer's moves       */
-/************************************/
 
 void moveCompTLeft(int move[]){
     if(isMoveBeyondBoundaries(move) || collidesWithComFigures(move))
@@ -925,7 +947,7 @@ void moveHumTDown(int move[]){
         addToDatabase(move);
         return;
     }
-    move[ROW]--; moveHumTDown(move); move[ROW]++;
+    move[ROW]++; moveHumTDown(move); move[ROW]--;
     return;
 }
 void moveHumTUp(int move[]){
@@ -1021,6 +1043,18 @@ void resetAllMovesAfterChangeOnBoard(){
     generateAllMoves();
 }
 
+char* convertMoveToAnotherArtOpponent(char *moveToConvert){
+    /* how not to love c++ hacks... */
+    char *convertedMove = new char[4];
+    int offsetToA = int('A') - 1;
+    convertedMove[0] = char(offsetToA + (int('H')) - moveToConvert[0]);
+    convertedMove[2] = char(offsetToA + (int('H')) - moveToConvert[2]);
+    convertedMove[1] = (char)(int('0') + int('8') - int(moveToConvert[1]));
+    convertedMove[3] = (char)(int('0') + int('8') - int(moveToConvert[3]));
+    convertedMove[4] = '\0';
+
+    return convertedMove;
+}
 void makeCompMoveOnBoard(){
 
     for(int i = 0; i < 50; i++){
@@ -1050,10 +1084,13 @@ void makeCompMoveOnBoard(){
         i++;
     }
 
-    cout << endl << "Opponent's move is: " << convertMoveExternalRep(bestMove) << endl << "Best: " << bestScore << endl;
-    cout << endl << "The algorithm went through " << numberOfLeaves << " calls";
+    char *compMoveExtRep = convertMoveExternalRep(bestMove);
+    cout << endl << endl << "Opponent's move is: " << compMoveExtRep << "(" << convertMoveToAnotherArtOpponent(compMoveExtRep) << ")" << endl;
+#if RUN_WITH_ADDITIONAL_OUTPUT
+    cout << endl << "Best: " << bestScore << endl;
+    cout << endl << "The algorithm went through " << numberOfLeaves << " calls. Last iteration stopped at " << NUM_OF_LEAVES;
     cout << endl << "The maximum depth was: " << DEPTH_FOR_OUTPUT << endl;
-
+#endif
     int prevMove = board[bestMove[MOVE_FROM_ROW]][bestMove[MOVE_FROM_COL]];
     board[bestMove[MOVE_FROM_ROW]][bestMove[MOVE_FROM_COL]] = EMPTY;
     board[bestMove[MOVE_TO_ROW]][bestMove[MOVE_TO_COL]] = prevMove;
@@ -1062,11 +1099,9 @@ void makeCompMoveOnBoard(){
 
     if(prevMove == C_T && bestMove[VER_HOR] == HORIZ) {
         COM_T_FIGHTER_HOR_MOVE = true;
-       // cout << endl << "COM_T_FIGHTER_HOR_MOVE: " << COM_T_FIGHTER_HOR_MOVE << endl;
     }
     else {
         COM_T_FIGHTER_HOR_MOVE = false;
-       // cout << endl << "COM_T_FIGHTER_HOR_MOVE: " << COM_T_FIGHTER_HOR_MOVE << endl;
     }
 
     resetAllMovesAfterChangeOnBoard();
@@ -1196,7 +1231,9 @@ int min(int depth, int previousBest){
 
 
 #if RUN_KILLER_HEURISTIC
-    if(!killerMove[depth].empty){
+    if(!killerMove[depth].empty[0] || !killerMove[depth].empty[1]){
+        generateAllMoves();
+        NUM_OF_LEAVES++;
         if(int numOfMove = findKillerMoveInAllHumMoves(&killerMove[depth]) != -100000){
 
             LOC_COM_T_FIGHTER_HOR_MOVE = COM_T_FIGHTER_HOR_MOVE;
@@ -1357,7 +1394,9 @@ int max(int depth, int previousBest){
 
     int maxMoves = NUM_OF_COM_MOVES;
 #if RUN_KILLER_HEURISTIC
-    if(!killerMove[depth].empty){
+    if(!killerMove[depth].empty[0] || !killerMove[depth].empty[1]){
+
+        NUM_OF_LEAVES++;
         if(int numOfMove = findKillerMoveInAllCompMoves(&killerMove[depth]) != -100000){
 
             LOC_COM_T_FIGHTER_HOR_MOVE = COM_T_FIGHTER_HOR_MOVE;
