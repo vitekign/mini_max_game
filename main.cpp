@@ -1,4 +1,11 @@
 #include <iostream>
+#include <chrono>
+#include <string.h>
+#include <stdlib.h>
+
+// g++ -std=c++0x -O3 -march=native -O trench_hero run_game.cpp
+
+
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "OCSimplifyInspection"
 using namespace std;
@@ -6,7 +13,7 @@ using namespace std;
 #define RUN_TEST 0
 #define RUN_KILLER_HEURISTIC 0
 #define RUN_ALPHA_BETA_OPTIMIZATION 1
-#define RUN_WITH_MOVE_VALIDATION 0
+#define RUN_WITH_MOVE_VALIDATION 1
 #define RUN_WITH_ADDITIONAL_OUTPUT 1
 
 #define EMPTY  0
@@ -32,14 +39,6 @@ using namespace std;
 #define H_W 6
 #define H_D 7
 #define H_X 8
-
-
-//TODO: add constraints concerning horizontal moves of T Fighter   +
-//TODO: check if entered move is legal/illegal        +
-//TODO: convert input/output so other computer can understand  +
-//TODO: get rid of global variables and encapsulate them in standalone functions
-//TODO: refactor killer heuristic so it runs according with T Fighter horizontal constraints     +
-//TODO: add logic to accommodate the process of who's making the first move  +
 
 #define DATABASE_DEPTH 200
 #define DATABASE_WIDTH 7
@@ -147,7 +146,6 @@ bool humanMovesFirst(){
 
 int main() {
     bool humanMoveFirst = humanMovesFirst();
-    cout << humanMoveFirst << endl;
     setupBoard();
     printBoard();
     generateAllMoves();
@@ -451,7 +449,7 @@ bool isMoveBeyondBoundaries() {
 }
 
 bool isMoveLegal(){
-    !isMoveBeyondBoundaries();
+    return !isMoveBeyondBoundaries();
 }
 
 bool collidesWithComFigures(int move[]){
@@ -1117,7 +1115,7 @@ int* makeComMove(){
     }
     NUM_OF_LEAVES++;
     int best =-20000, depth = 0, score;
-    int BEST_MOVE[4], LOCAL_MOVE[4];
+    int BEST_MOVE[7], LOCAL_MOVE[4];
     int counter = 0;
     bool LOC_HUM_T_FIGHTER_HOR_MOVE;
     bool LOC_COM_T_FIGHTER_HOR_MOVE;
