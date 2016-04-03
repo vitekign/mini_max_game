@@ -56,9 +56,11 @@ enum MOVE{
     MOVE_FROM_ROW,
     MOVE_FROM_COL,
     MOVE_TO_ROW,
+
     MOVE_TO_COL,
     MOVE_FIG_TYPE,
     MOVE_WHOSE_MOVE,
+
     VER_HOR,
 };
 
@@ -646,14 +648,13 @@ void addToDatabase(int *move) {
     }
 
     if(allMoves[ALL_INDEX][MOVE_WHOSE_MOVE] == COM_TURN){
-        memcpy(&allCompMoves[NUM_OF_COM_MOVES++], move, sizeof(int) * 7);
+        memcpy(&allCompMoves[NUM_OF_COM_MOVES++], &allMoves[ALL_INDEX], sizeof(int) * 7);
     }
     if(allMoves[ALL_INDEX][MOVE_WHOSE_MOVE] == HUM_TURN){
-        memcpy(&allHumanMoves[NUM_OF_HUM_MOVES++], move, sizeof(int) * 7);
+        memcpy(&allHumanMoves[NUM_OF_HUM_MOVES++], &allMoves[ALL_INDEX], sizeof(int) * 7);
     }
     ALL_INDEX++;
 }
-
 
 /*      Find computer's moves       */
 
@@ -668,6 +669,9 @@ void moveCompTLeft(int move[]){
     if(emptySpot(move)) {
         move[VER_HOR] = HORIZ;
         addToDatabase(move);
+        move[4] = -1;
+        move[5] = -1;
+        move[6] = -1;
         move[COL]--; moveCompTLeft(move); move[COL]++;
     }
     return; //it's run into unbeatable hum figures
@@ -683,6 +687,10 @@ void moveCompTRight(int move[]){
     if(emptySpot(move)) {
         move[VER_HOR] = HORIZ;
         addToDatabase(move);
+        move[4] = -1;
+        move[5] = -1;
+        move[6] = -1;
+
         move[COL]++; moveCompTRight(move); move[COL]--;
     }
     return; //it's run into unbeatable hum figures
@@ -707,6 +715,9 @@ void moveCompTDown(int move[]){
     }
     if(emptySpot(move)) {
         addToDatabase(move);
+        move[4] = -1;
+        move[5] = -1;
+        move[6] = -1;
         move[ROW]++; moveCompTDown(move); move[ROW]--;
     }
     return; //return if it's run into a DEATH STAR
@@ -805,6 +816,7 @@ void generateAllMoves(){
     ALL_INDEX = HUM_INDEX = COM_INDEX = 0;
 
     int move[7];
+    memset(move, -1, sizeof(int)*7);
     for(int i = 0; i < BRD_LENGTH; i++){
         for(int j = 0; j < BRD_LENGTH; j++){
             if(board[i][j] != C_W &&
@@ -815,6 +827,10 @@ void generateAllMoves(){
                     move[1] = j;
                     move[2] = i;
                     move[3] = j;
+                    move[4] = -1;
+                    move[5] = -1;
+                    move[6] = -1;
+
                     if(board[i][j] == C_T){
                         findAllMovesForCompT(move);
                     }  if(board[i][j] == C_X) {
@@ -918,6 +934,9 @@ void moveHumTLeft(int move[]){
     if(emptySpot(move)) {
         move[VER_HOR] = HORIZ;
         addToDatabase(move);
+        move[4] = -1;
+        move[5] = -1;
+        move[6] = -1;
         move[COL]--; moveHumTLeft(move); move[COL]++;
     }
     return; //it's run into unbeatable hum figures
@@ -933,6 +952,9 @@ void moveHumTRight(int move[]){
     if(emptySpot(move)) {
         move[VER_HOR] = HORIZ;
         addToDatabase(move);
+        move[4] = -1;
+        move[5] = -1;
+        move[6] = -1;
         move[COL]++; moveHumTRight(move); move[COL]--;
     }
     return; //it's run into unbeatable hum figures
@@ -957,6 +979,9 @@ void moveHumTUp(int move[]){
     }
     if(emptySpot(move)) {
         addToDatabase(move);
+        move[4] = -1;
+        move[5] = -1;
+        move[6] = -1;
         move[ROW]--; moveHumTUp(move); move[ROW]++;
     }
     return; //return if it's run into a DEATH STAR
@@ -1083,6 +1108,7 @@ void makeCompMoveOnBoard(){
     }
 
     char *compMoveExtRep = convertMoveExternalRep(bestMove);
+    cout << endl << "Computer hor/ver is: " << bestMove[VER_HOR] << endl;
     cout << endl << endl << "Opponent's move is: " << compMoveExtRep << "(" << convertMoveToAnotherArtOpponent(compMoveExtRep) << ")" << endl;
 #if RUN_WITH_ADDITIONAL_OUTPUT
     cout << endl << "Best: " << bestScore << endl;
@@ -1122,6 +1148,7 @@ int* makeComMove(){
 
     int maxMoves = NUM_OF_COM_MOVES;
     for(;;){
+        generateAllMoves();
 
         LOC_COM_T_FIGHTER_HOR_MOVE = COM_T_FIGHTER_HOR_MOVE;
         LOC_HUM_T_FIGHTER_HOR_MOVE = HUM_T_FIGHTER_HOR_MOVE;
@@ -1148,6 +1175,7 @@ int* makeComMove(){
 
         score = min(depth+1, best);
 
+        /* Move back the figure */
         board[LOCAL_MOVE[MOVE_TO_ROW]][LOCAL_MOVE[MOVE_TO_COL]] = prevFigure;
         board[LOCAL_MOVE[MOVE_FROM_ROW]][LOCAL_MOVE[MOVE_FROM_COL]] = prevMove;
 
@@ -1155,7 +1183,6 @@ int* makeComMove(){
         COM_T_FIGHTER_HOR_MOVE = LOC_COM_T_FIGHTER_HOR_MOVE;
 
         resetAllMovesAfterChangeOnBoard();
-
 
         if(score > best){
             BEST_MOVE[0] = allCompMoves[counter][0];
@@ -1167,6 +1194,7 @@ int* makeComMove(){
             BEST_MOVE[6] = allCompMoves[counter][6];
             best = score;
         }
+
         counter++;
         if(counter >= maxMoves){
             break;
