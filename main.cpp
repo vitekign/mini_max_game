@@ -3,7 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-// g++ -std=c++0x -O3 -march=native -O trench_hero run_game.cpp
+// g++ -std=c++0x -O3 -march=native -o trench_hero run_game.cpp
 
 
 #pragma clang diagnostic push
@@ -566,7 +566,7 @@ int evaluate(){
     int aggressiveness = 0;
     aggressiveness = howFarFromTheOppositeSide();
 
-    return  (findTheNumberOfFigures(COM) - findTheNumberOfFigures(HUM))*200 + moveability*2 + aggressiveness;
+    return  (findTheNumberOfFigures(COM) - findTheNumberOfFigures(HUM))*200 + moveability*2 ;//+ aggressiveness/5;
 
 //    generateAllMoves();
 //    if(side == COM)
@@ -1208,14 +1208,14 @@ int* makeComMove(){
 
 int findKillerMoveInAllHumMoves(KillerMove *killerMove){
     for(int i = 0; i < NUM_OF_HUM_MOVES; i++){
-        if(killerMove->empty[0] = false) {
+        if(killerMove->empty[0] == false) {
             if (allHumanMoves[i][MOVE_TO_ROW] == killerMove->moveTo[0][0]) {
                 if (allHumanMoves[i][MOVE_TO_COL] == killerMove->moveTo[0][1]) {
                     return i;
                 }
             }
         }
-        if(killerMove->empty[1] = false) {
+        if(killerMove->empty[1] == false) {
             if (allHumanMoves[i][MOVE_TO_ROW] == killerMove->moveTo[1][0]) {
                 if (allHumanMoves[i][MOVE_TO_COL] == killerMove->moveTo[1][1]) {
                     return i;
@@ -1257,7 +1257,7 @@ int min(int depth, int previousBest){
 
 
 #if RUN_KILLER_HEURISTIC
-    if(!killerMove[depth].empty[0] || !killerMove[depth].empty[1]){
+    if((!killerMove[depth].empty[0]) || (!killerMove[depth].empty[1])){
         generateAllMoves();
         NUM_OF_LEAVES++;
         if(int numOfMove = findKillerMoveInAllHumMoves(&killerMove[depth]) != -100000){
@@ -1344,9 +1344,6 @@ int min(int depth, int previousBest){
         resetAllMovesAfterChangeOnBoard();
 
 
-      //  allHumanMoves[counter][VER_HOR] = HUM_INITIAL_VER_HOR_FLAG;
-
-
         if(score < best){
             best = score;
         }
@@ -1376,14 +1373,14 @@ int min(int depth, int previousBest){
 
 int findKillerMoveInAllCompMoves(KillerMove *killerMove){
     for(int i = 0; i < NUM_OF_COM_MOVES; i++){
-        if(killerMove->empty[0] = false) {
+        if(killerMove->empty[0] == false) {
             if (allCompMoves[i][MOVE_TO_ROW] == killerMove->moveTo[0][0]) {
                 if (allCompMoves[i][MOVE_TO_COL] == killerMove->moveTo[0][1]) {
                     return i;
                 }
             }
         }
-        if(killerMove->empty[1] = false) {
+        if(killerMove->empty[1] == false) {
             if (allCompMoves[i][MOVE_TO_ROW] == killerMove->moveTo[1][0]) {
                 if (allCompMoves[i][MOVE_TO_COL] == killerMove->moveTo[1][1]) {
                     return i;
@@ -1420,7 +1417,7 @@ int max(int depth, int previousBest){
 
     int maxMoves = NUM_OF_COM_MOVES;
 #if RUN_KILLER_HEURISTIC
-    if(!killerMove[depth].empty[0] || !killerMove[depth].empty[1]){
+    if((!killerMove[depth].empty[0]) || (!killerMove[depth].empty[1])){
 
         NUM_OF_LEAVES++;
         if(int numOfMove = findKillerMoveInAllCompMoves(&killerMove[depth]) != -100000){
