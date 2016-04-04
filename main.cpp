@@ -55,12 +55,12 @@ bool COM_T_FIGHTER_HOR_MOVE = false;
 enum MOVE{
     MOVE_FROM_ROW,
     MOVE_FROM_COL,
-    MOVE_TO_ROW,
 
+    MOVE_TO_ROW,
     MOVE_TO_COL,
+
     MOVE_FIG_TYPE,
     MOVE_WHOSE_MOVE,
-
     VER_HOR,
 };
 
@@ -1039,8 +1039,6 @@ void getAMove(){
     }
 }
 
-
-
 void makeHumMove(){
     int prevMove =  board[HUM_MOVE[MOVE_FROM_ROW]][HUM_MOVE[MOVE_FROM_COL]];
     board[HUM_MOVE[MOVE_FROM_ROW]][HUM_MOVE[MOVE_FROM_COL]] = EMPTY;
@@ -1206,20 +1204,18 @@ int* makeComMove(){
     return returnValue;
 }
 
-int findKillerMoveInAllHumMoves(KillerMove *killerMove){
-    for(int i = 0; i < NUM_OF_HUM_MOVES; i++){
-        if(killerMove->empty[0] == false) {
-            if (allHumanMoves[i][MOVE_TO_ROW] == killerMove->moveTo[0][0]) {
-                if (allHumanMoves[i][MOVE_TO_COL] == killerMove->moveTo[0][1]) {
-                    return i;
-                }
+int findKillerMoveInAllHumMoves(KillerMove *killerMove) {
+    for (int i = 0; i < NUM_OF_HUM_MOVES; i++) {
+        if (killerMove->empty[0] == false) {
+            if ((allHumanMoves[i][MOVE_TO_ROW] == killerMove->moveTo[0][0]) &&
+                (allHumanMoves[i][MOVE_TO_COL] == killerMove->moveTo[0][1])) {
+                return i;
             }
         }
-        if(killerMove->empty[1] == false) {
-            if (allHumanMoves[i][MOVE_TO_ROW] == killerMove->moveTo[1][0]) {
-                if (allHumanMoves[i][MOVE_TO_COL] == killerMove->moveTo[1][1]) {
-                    return i;
-                }
+        if (killerMove->empty[1] == false) {
+            if ((allHumanMoves[i][MOVE_TO_ROW] == killerMove->moveTo[1][0]) &&
+                (allHumanMoves[i][MOVE_TO_COL] == killerMove->moveTo[1][1])) {
+                return i;
             }
         }
     }
@@ -1254,14 +1250,12 @@ int min(int depth, int previousBest){
     int maxMoves = NUM_OF_HUM_MOVES;
 
 
-
-
 #if RUN_KILLER_HEURISTIC
     if((!killerMove[depth].empty[0]) || (!killerMove[depth].empty[1])){
         generateAllMoves();
         NUM_OF_LEAVES++;
-        if(int numOfMove = findKillerMoveInAllHumMoves(&killerMove[depth]) != -100000){
-
+        if(findKillerMoveInAllHumMoves(&killerMove[depth]) != -100000){
+            int numOfMove = findKillerMoveInAllHumMoves(&killerMove[depth]);
             LOC_COM_T_FIGHTER_HOR_MOVE = COM_T_FIGHTER_HOR_MOVE;
             LOC_HUM_T_FIGHTER_HOR_MOVE = HUM_T_FIGHTER_HOR_MOVE;
 
@@ -1274,14 +1268,15 @@ int min(int depth, int previousBest){
             int prevMove = board[LOCAL_HUM_MOVE[MOVE_FROM_ROW]][LOCAL_HUM_MOVE[MOVE_FROM_COL]];
             board[LOCAL_HUM_MOVE[MOVE_FROM_ROW]][LOCAL_HUM_MOVE[MOVE_FROM_COL]] = EMPTY;
             board[LOCAL_HUM_MOVE[MOVE_TO_ROW]][LOCAL_HUM_MOVE[MOVE_TO_COL]] = prevMove;
-            resetAllMovesAfterChangeOnBoard();
 
             if(prevMove == H_T && allHumanMoves[counter][VER_HOR] == HORIZ)
                 HUM_T_FIGHTER_HOR_MOVE = true;
             else
                 HUM_T_FIGHTER_HOR_MOVE = false;
 
-            score = min(depth+1, best);
+            resetAllMovesAfterChangeOnBoard();
+
+            score = max(depth+1, best);
 
             //undo move
             board[LOCAL_HUM_MOVE[MOVE_TO_ROW]][LOCAL_HUM_MOVE[MOVE_TO_COL]] = prevFigure;
@@ -1371,20 +1366,18 @@ int min(int depth, int previousBest){
     return best;
 }
 
-int findKillerMoveInAllCompMoves(KillerMove *killerMove){
-    for(int i = 0; i < NUM_OF_COM_MOVES; i++){
-        if(killerMove->empty[0] == false) {
-            if (allCompMoves[i][MOVE_TO_ROW] == killerMove->moveTo[0][0]) {
-                if (allCompMoves[i][MOVE_TO_COL] == killerMove->moveTo[0][1]) {
-                    return i;
-                }
+int findKillerMoveInAllCompMoves(KillerMove *killerMove) {
+    for (int i = 0; i < NUM_OF_COM_MOVES; i++) {
+        if (killerMove->empty[0] == false) {
+            if ((allCompMoves[i][MOVE_TO_ROW] == killerMove->moveTo[0][0])
+                && (allCompMoves[i][MOVE_TO_COL] == killerMove->moveTo[0][1])) {
+                return i;
             }
         }
-        if(killerMove->empty[1] == false) {
-            if (allCompMoves[i][MOVE_TO_ROW] == killerMove->moveTo[1][0]) {
-                if (allCompMoves[i][MOVE_TO_COL] == killerMove->moveTo[1][1]) {
-                    return i;
-                }
+        if (killerMove->empty[1] == false) {
+            if ((allCompMoves[i][MOVE_TO_ROW] == killerMove->moveTo[1][0]) &&
+                (allCompMoves[i][MOVE_TO_COL] == killerMove->moveTo[1][1])) {
+                return i;
             }
         }
     }
@@ -1420,11 +1413,10 @@ int max(int depth, int previousBest){
     if((!killerMove[depth].empty[0]) || (!killerMove[depth].empty[1])){
 
         NUM_OF_LEAVES++;
-        if(int numOfMove = findKillerMoveInAllCompMoves(&killerMove[depth]) != -100000){
-
+        if(findKillerMoveInAllCompMoves(&killerMove[depth]) != -100000){
+            int numOfMove = findKillerMoveInAllCompMoves(&killerMove[depth]);
             LOC_COM_T_FIGHTER_HOR_MOVE = COM_T_FIGHTER_HOR_MOVE;
             LOC_HUM_T_FIGHTER_HOR_MOVE = HUM_T_FIGHTER_HOR_MOVE;
-
 
             LOCAL_COM_MOVE[0] = allCompMoves[numOfMove][0];
             LOCAL_COM_MOVE[1] = allCompMoves[numOfMove][1];
@@ -1435,12 +1427,13 @@ int max(int depth, int previousBest){
             int prevMove = board[LOCAL_COM_MOVE[MOVE_FROM_ROW]][LOCAL_COM_MOVE[MOVE_FROM_COL]];
             board[LOCAL_COM_MOVE[MOVE_FROM_ROW]][LOCAL_COM_MOVE[MOVE_FROM_COL]] = EMPTY;
             board[LOCAL_COM_MOVE[MOVE_TO_ROW]][LOCAL_COM_MOVE[MOVE_TO_COL]] = prevMove;
-            resetAllMovesAfterChangeOnBoard();
 
             if(prevMove == C_T && allCompMoves[counter][VER_HOR] == HORIZ)
                 COM_T_FIGHTER_HOR_MOVE = true;
             else
                 COM_T_FIGHTER_HOR_MOVE = false;
+
+            resetAllMovesAfterChangeOnBoard();
 
             score = min(depth+1, best);
 
@@ -1492,7 +1485,6 @@ int max(int depth, int previousBest){
         //undo move
         board[LOCAL_COM_MOVE[MOVE_TO_ROW]][LOCAL_COM_MOVE[MOVE_TO_COL]] = prevFigure;
         board[LOCAL_COM_MOVE[MOVE_FROM_ROW]][LOCAL_COM_MOVE[MOVE_FROM_COL]] = prevMove;
-
 
         HUM_T_FIGHTER_HOR_MOVE = LOC_HUM_T_FIGHTER_HOR_MOVE;
         COM_T_FIGHTER_HOR_MOVE = LOC_COM_T_FIGHTER_HOR_MOVE;
