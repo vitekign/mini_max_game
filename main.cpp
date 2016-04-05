@@ -566,7 +566,7 @@ int evaluate(){
     int aggressiveness = 0;
     aggressiveness = howFarFromTheOppositeSide();
 
-    return  (findTheNumberOfFigures(COM) - findTheNumberOfFigures(HUM))*200 + moveability*2 ;//+ aggressiveness/5;
+    return  (findTheNumberOfFigures(COM) - findTheNumberOfFigures(HUM))*200 + moveability*2 + aggressiveness;
 
 //    generateAllMoves();
 //    if(side == COM)
