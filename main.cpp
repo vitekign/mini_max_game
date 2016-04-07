@@ -13,7 +13,7 @@ using namespace std;
 #define RUN_TEST 0
 #define RUN_KILLER_HEURISTIC 1
 #define RUN_ALPHA_BETA_OPTIMIZATION 1
-#define RUN_WITH_MOVE_VALIDATION 1
+#define RUN_WITH_MOVE_VALIDATION 0
 #define RUN_WITH_ADDITIONAL_OUTPUT 1
 
 #define EMPTY  0
@@ -1495,7 +1495,7 @@ int max(int depth, int previousBest){
             best = score;
         }
 
-        if(previousBest < best){
+        if(previousBest <= best){
 #if RUN_KILLER_HEURISTIC
             if(killerMove[depth].empty[1] = false) {
                 killerMove[depth].moveTo[0][0] = killerMove[depth].moveTo[1][0];
