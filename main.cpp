@@ -4,17 +4,18 @@
 #include <stdlib.h>
 
 // g++ -std=c++0x -O3 -march=native -o trench_hero run_game.cpp
-
+//TODO: change eval func so it takes into account capture of the DEATH STAR
 
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "OCSimplifyInspection"
 using namespace std;
 
 #define RUN_TEST 0
-#define RUN_KILLER_HEURISTIC 1
+#define RUN_KILLER_HEURISTIC 0
 #define RUN_ALPHA_BETA_OPTIMIZATION 1
-#define RUN_WITH_MOVE_VALIDATION 0
+#define RUN_WITH_MOVE_VALIDATION 1
 #define RUN_WITH_ADDITIONAL_OUTPUT 1
+#define RUN_WITH_SHOWING_MOVES 1
 
 #define EMPTY  0
 #define C_WINS 5000
@@ -59,13 +60,13 @@ enum MOVE{
     MOVE_TO_ROW,
     MOVE_TO_COL,
 
-    MOVE_FIG_TYPE,
+    MOVE_PIECE_TYPE,
     MOVE_WHOSE_MOVE,
     VER_HOR,
 };
 
-#define HORIZ -5
-#define VERTI -10
+#define HORIZONTAL -5
+#define VERTICAL-10
 
 enum TURN{
     COM_TURN,
@@ -78,14 +79,14 @@ enum GENERAL{
 };
 
 int BEST_SCORE = 0;
-int NUM_OF_LEAVES = 0;
+int NUM_OF_NODES = 0;
 
 int NUM_OF_HUM_MOVES = 0;
 int NUM_OF_COM_MOVES = 0;
 int MAX_MILS_ONE_ITER = 5000;
 
 int COLLAPSE_RECURSION = false;
-chrono::high_resolution_clock::time_point lastTime;
+chrono::high_resolution_clock::time_point last_time;
 int DEPTH_FOR_OUTPUT = 0;
 int board[7][7];
 char const board_labels[] = {'-', 'T', '~', '*', 'X', 't', '+', '@', 'x'};
@@ -147,13 +148,13 @@ bool humanMovesFirst(){
 }
 
 int main() {
-    bool humanMoveFirst = humanMovesFirst();
+    bool humansMoveFirst = humanMovesFirst();
     setupBoard();
     printBoard();
     generateAllMoves();
     showAllMoves(BOTH);
     for(;;){
-        if(humanMoveFirst) {
+        if(humansMoveFirst) {
             getAMove();
             makeHumMove();
             checkGameOver();
@@ -266,6 +267,19 @@ bool moveLegal(){
     return false;
 }
 
+/*
+        7   -  T  T  -  T  -  T
+        6   X  -  ~  *  ~  -  -
+        5   X  -  -  -  -  X  X
+        4   -  -  x  -  -  -  -
+        3   x  -  -  -  -  x  x
+        2   -  -  +  @  +  -  -
+        1   t  -  t  -  t  t  -
+            A  B  C  D  E  F  G
+ */
+
+//TODO: Get rid of this boilerplate code. Too much of unnecessary code. Instead: 1. Use regex to find out if the input conforms to the required pattern.
+//TODO: 2. Replace the following with simple subtraction expressions.
 void convertMoveToInternalRep(char *move){
     if(move[0] == 'A' || move[0] == 'a'){
         moveFromI[1] = 0;
@@ -339,7 +353,7 @@ void convertMoveToInternalRep(char *move){
         moveToI[0] = -1;
     }
 }
-char* convertMoveExternalRep(int *move){
+char* convertMoveToExternalRep(int *move){
     char *returnValue = new char[5];
     for(int i = 0; i < 2; i++){
         int  *convFrom;
@@ -566,7 +580,15 @@ int evaluate(){
     int aggressiveness = 0;
     aggressiveness = howFarFromTheOppositeSide();
 
-    return  (findTheNumberOfFigures(COM) - findTheNumberOfFigures(HUM))*200 + moveability*2 + aggressiveness;
+    int points_for_capturing_death_star = 0;
+    if(board[5][3] != H_D)
+        points_for_capturing_death_star = 700;
+
+    if(board[1][3] != C_D)
+        points_for_capturing_death_star = -700;
+
+    return  (findTheNumberOfFigures(COM) - findTheNumberOfFigures(HUM))*100 + moveability*1 +
+            int(aggressiveness * 1.5) + points_for_capturing_death_star;
 
 //    generateAllMoves();
 //    if(side == COM)
@@ -577,13 +599,14 @@ int evaluate(){
 //                           + (moveability * 2) + (aggressiveness * 5);
 }
 
-void showAllMoves(int advToShow){
-    if(advToShow == BOTH) {
+void showAllMoves(int adversary_to_show){
+#if RUN_WITH_SHOWING_MOVES
+    if(adversary_to_show == BOTH) {
         for (int i = 0; i < NUM_OF_COM_MOVES; i++) {
             if(i%10 == 0){
                 cout << endl << "COM MOVES: ";
             }
-            cout << convertMoveExternalRep(allCompMoves[i]);
+            cout << convertMoveToExternalRep(allCompMoves[i]);
             cout << "..";
 
         }
@@ -591,31 +614,33 @@ void showAllMoves(int advToShow){
             if(i%10 == 0){
                 cout << endl << "HUM MOVES: ";
             }
-            cout << convertMoveExternalRep(allHumanMoves[i]);
+            cout << convertMoveToExternalRep(allHumanMoves[i]);
             cout << "..";
         }
     }
-    else if(advToShow == COM){
+    else if(adversary_to_show == COM){
         for (int i = 0; i < NUM_OF_COM_MOVES; i++) {
             if(i%10 == 0){
                 cout << endl << "COM MOVES: ";
             }
-            cout << convertMoveExternalRep(allCompMoves[i]);
+            cout << convertMoveToExternalRep(allCompMoves[i]);
             cout << "..";
         }
-    } else if(advToShow == HUM){
+    } else if(adversary_to_show == HUM){
         for (int i = 0; i < NUM_OF_HUM_MOVES; i++) {
             if(i%10 == 0){
                 cout << endl << "HUM MOVES: ";
             }
-            cout << convertMoveExternalRep(allHumanMoves[i]);
+            cout << convertMoveToExternalRep(allHumanMoves[i]);
             cout << "..";
         }
     }
+#endif
 }
 
 void addToDatabase(int *move) {
-
+    // Copy current move into all-moves data-set
+    //     dest                  src   count
     memcpy(&allMoves[ALL_INDEX], move, sizeof(int) * 7);
 
     if (board[allMoves[ALL_INDEX][MOVE_FROM_ROW]][allMoves[ALL_INDEX][MOVE_FROM_COL]] ==  H_T ) {
@@ -626,10 +651,10 @@ void addToDatabase(int *move) {
     }
 
     if (board[allMoves[ALL_INDEX][MOVE_FROM_ROW]][allMoves[ALL_INDEX][MOVE_FROM_COL]] == H_T) {
-        allMoves[ALL_INDEX][MOVE_FIG_TYPE] = H_T;
+        allMoves[ALL_INDEX][MOVE_PIECE_TYPE] = H_T;
     }
     if (board[allMoves[ALL_INDEX][MOVE_FROM_ROW]][allMoves[ALL_INDEX][MOVE_FROM_COL]] == H_X) {
-        allMoves[ALL_INDEX][MOVE_FIG_TYPE] = H_X;
+        allMoves[ALL_INDEX][MOVE_PIECE_TYPE] = H_X;
     }
 
     if (board[allMoves[ALL_INDEX][MOVE_FROM_ROW]][allMoves[ALL_INDEX][MOVE_FROM_COL]] == C_T) {
@@ -641,12 +666,13 @@ void addToDatabase(int *move) {
     }
 
     if (board[allMoves[ALL_INDEX][MOVE_FROM_ROW]][allMoves[ALL_INDEX][MOVE_FROM_COL]] == C_T) {
-        allMoves[ALL_INDEX][MOVE_FIG_TYPE] = C_T;
+        allMoves[ALL_INDEX][MOVE_PIECE_TYPE] = C_T;
     }
     if (board[allMoves[ALL_INDEX][MOVE_FROM_ROW]][allMoves[ALL_INDEX][MOVE_FROM_COL]] == C_X) {
-        allMoves[ALL_INDEX][MOVE_FIG_TYPE] = C_X;
+        allMoves[ALL_INDEX][MOVE_PIECE_TYPE] = C_X;
     }
 
+    // Copy current move into computer/human moves data-set
     if(allMoves[ALL_INDEX][MOVE_WHOSE_MOVE] == COM_TURN){
         memcpy(&allCompMoves[NUM_OF_COM_MOVES++], &allMoves[ALL_INDEX], sizeof(int) * 7);
     }
@@ -662,12 +688,12 @@ void moveCompTLeft(int move[]){
     if(isMoveBeyondBoundaries(move) || collidesWithComFigures(move))
         return;
     if(collidesWithBeatableHumFig(move)){
-        move[VER_HOR] = HORIZ;
+        move[VER_HOR] = HORIZONTAL;
         addToDatabase(move);
         return;
     }
     if(emptySpot(move)) {
-        move[VER_HOR] = HORIZ;
+        move[VER_HOR] = HORIZONTAL;
         addToDatabase(move);
         move[4] = -1;
         move[5] = -1;
@@ -680,12 +706,12 @@ void moveCompTRight(int move[]){
     if(isMoveBeyondBoundaries(move) || collidesWithComFigures(move))
         return;
     if(collidesWithBeatableHumFig(move)){
-        move[VER_HOR] = HORIZ;
+        move[VER_HOR] = HORIZONTAL;
         addToDatabase(move);
         return;
     }
     if(emptySpot(move)) {
-        move[VER_HOR] = HORIZ;
+        move[VER_HOR] = HORIZONTAL;
         addToDatabase(move);
         move[4] = -1;
         move[5] = -1;
@@ -813,12 +839,13 @@ void generateAllMoves(){
     memset(allHumanMoves, -1, sizeof(allMoves[0][0]) * 200 * 7);
     NUM_OF_HUM_MOVES = 0;
     NUM_OF_COM_MOVES = 0;
-    ALL_INDEX = HUM_INDEX = COM_INDEX = 0;
+    ALL_INDEX = HUM_INDEX = COM_INDEX = 0; // index at which the move is being processed.
 
     int move[7];
     memset(move, -1, sizeof(int)*7);
     for(int i = 0; i < BRD_LENGTH; i++){
         for(int j = 0; j < BRD_LENGTH; j++){
+            //Only X-WINGs and TIE FIGHTERs can move. WALLs and DEATH STAR cannot move.
             if(board[i][j] != C_W &&
                board[i][j] != C_D &&
                board[i][j] != H_W &&
@@ -827,9 +854,9 @@ void generateAllMoves(){
                     move[1] = j;
                     move[2] = i;
                     move[3] = j;
-                    move[4] = -1;
-                    move[5] = -1;
-                    move[6] = -1;
+                    move[4] = -1;   // To be assigned down the function stack.
+                    move[5] = -1;   // To be assigned down the function stack.
+                    move[6] = -1;   // To be assigned down the function stack.
 
                     if(board[i][j] == C_T){
                         findAllMovesForCompT(move);
@@ -927,12 +954,12 @@ void moveHumTLeft(int move[]){
     if(isMoveBeyondBoundaries(move) || collidesWithHumFigures(move))
         return;
     if(collidesWithBeatableComFig(move)){
-        move[VER_HOR] = HORIZ;
+        move[VER_HOR] = HORIZONTAL;
         addToDatabase(move);
         return;
     }
     if(emptySpot(move)) {
-        move[VER_HOR] = HORIZ;
+        move[VER_HOR] = HORIZONTAL;
         addToDatabase(move);
         move[4] = -1;
         move[5] = -1;
@@ -945,12 +972,12 @@ void moveHumTRight(int move[]){
     if(isMoveBeyondBoundaries(move) || collidesWithHumFigures(move))
         return;
     if(collidesWithBeatableComFig(move)){
-        move[VER_HOR] = HORIZ;
+        move[VER_HOR] = HORIZONTAL;
         addToDatabase(move);
         return;
     }
     if(emptySpot(move)) {
-        move[VER_HOR] = HORIZ;
+        move[VER_HOR] = HORIZONTAL;
         addToDatabase(move);
         move[4] = -1;
         move[5] = -1;
@@ -1040,9 +1067,9 @@ void getAMove(){
 }
 
 void makeHumMove(){
-    int prevMove =  board[HUM_MOVE[MOVE_FROM_ROW]][HUM_MOVE[MOVE_FROM_COL]];
+    int piece_to_move_to_new_loc =  board[HUM_MOVE[MOVE_FROM_ROW]][HUM_MOVE[MOVE_FROM_COL]];
     board[HUM_MOVE[MOVE_FROM_ROW]][HUM_MOVE[MOVE_FROM_COL]] = EMPTY;
-    board[HUM_MOVE[MOVE_TO_ROW]][HUM_MOVE[MOVE_TO_COL]] = prevMove;
+    board[HUM_MOVE[MOVE_TO_ROW]][HUM_MOVE[MOVE_TO_COL]] = piece_to_move_to_new_loc;
 
     generateAllMoves();
 }
@@ -1083,43 +1110,43 @@ void makeCompMoveOnBoard(){
         killerMove[i].empty[1] = true;
     }
 
-    lastTime = std::chrono::high_resolution_clock::now();
+    last_time = std::chrono::high_resolution_clock::now();
     COLLAPSE_RECURSION = false;
     DEPTH_FOR_OUTPUT = 0;
-    int numberOfLeaves = 0;
-    int i = 2;
-    int *bestMove;
-    int *lastMove;
+    int number_of_nodes = 0;
+    int depth = 2;
+    int *best_move;
+    int *last_move;
     int bestScore;
     while(true){
-        MAXDEPTH = i;
-        NUM_OF_LEAVES = 0;
-        lastMove = makeComMove();
+        MAXDEPTH = depth;
+        NUM_OF_NODES = 0;
+        last_move = makeComMove();
         if(COLLAPSE_RECURSION == false){
-            bestMove = lastMove;
-            numberOfLeaves = NUM_OF_LEAVES;
+            best_move = last_move;
+            number_of_nodes = NUM_OF_NODES;
             bestScore = BEST_SCORE;
         }else {
             break;
         }
-        i++;
+        depth++;
     }
 
-    char *compMoveExtRep = convertMoveExternalRep(bestMove);
-    cout << endl << "Computer hor/ver is: " << bestMove[VER_HOR] << endl;
+    char *compMoveExtRep = convertMoveToExternalRep(best_move);
+    cout << endl << "Computer hor/ver is: " << best_move[VER_HOR] << endl;
     cout << endl << endl << "Opponent's move is: " << compMoveExtRep << "(" << convertMoveToAnotherArtOpponent(compMoveExtRep) << ")" << endl;
 #if RUN_WITH_ADDITIONAL_OUTPUT
     cout << endl << "Best: " << bestScore << endl;
-    cout << endl << "The algorithm went through " << numberOfLeaves << " calls. Last iteration stopped at " << NUM_OF_LEAVES;
+    cout << endl << "The algorithm went through " << number_of_nodes << " calls. Last iteration stopped at " << NUM_OF_NODES;
     cout << endl << "The maximum depth was: " << DEPTH_FOR_OUTPUT << endl;
 #endif
-    int prevMove = board[bestMove[MOVE_FROM_ROW]][bestMove[MOVE_FROM_COL]];
-    board[bestMove[MOVE_FROM_ROW]][bestMove[MOVE_FROM_COL]] = EMPTY;
-    board[bestMove[MOVE_TO_ROW]][bestMove[MOVE_TO_COL]] = prevMove;
+    int prevMove = board[best_move[MOVE_FROM_ROW]][best_move[MOVE_FROM_COL]];
+    board[best_move[MOVE_FROM_ROW]][best_move[MOVE_FROM_COL]] = EMPTY;
+    board[best_move[MOVE_TO_ROW]][best_move[MOVE_TO_COL]] = prevMove;
 
     resetAllMovesAfterChangeOnBoard();
 
-    if(prevMove == C_T && bestMove[VER_HOR] == HORIZ) {
+    if(prevMove == C_T && best_move[VER_HOR] == HORIZONTAL) {
         COM_T_FIGHTER_HOR_MOVE = true;
     }
     else {
@@ -1133,11 +1160,11 @@ void makeCompMoveOnBoard(){
 
 int* makeComMove(){
     auto currentTime = std::chrono::high_resolution_clock::now();
-    if (std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastTime).count() > MAX_MILS_ONE_ITER) {
+    if (std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - last_time).count() > MAX_MILS_ONE_ITER) {
         COLLAPSE_RECURSION = true;
         return new int[0];
     }
-    NUM_OF_LEAVES++;
+    NUM_OF_NODES++;
     int best =-20000, depth = 0, score;
     int BEST_MOVE[7], LOCAL_MOVE[4];
     int counter = 0;
@@ -1156,26 +1183,27 @@ int* makeComMove(){
         LOCAL_MOVE[2] = allCompMoves[counter][2];
         LOCAL_MOVE[3] = allCompMoves[counter][3];
 
-        int prevFigure = board[LOCAL_MOVE[MOVE_TO_ROW]][LOCAL_MOVE[MOVE_TO_COL]];
-        int prevMove = board[LOCAL_MOVE[MOVE_FROM_ROW]][LOCAL_MOVE[MOVE_FROM_COL]];
-        board[LOCAL_MOVE[MOVE_FROM_ROW]][LOCAL_MOVE[MOVE_FROM_COL]] = EMPTY;
-        board[LOCAL_MOVE[MOVE_TO_ROW]][LOCAL_MOVE[MOVE_TO_COL]] = prevMove;
+        int prev_piece = board[LOCAL_MOVE[MOVE_TO_ROW]][LOCAL_MOVE[MOVE_TO_COL]];
 
-        if(prevMove == C_T && allCompMoves[counter][VER_HOR] == HORIZ)
+        int prev_loc_of_piece = board[LOCAL_MOVE[MOVE_FROM_ROW]][LOCAL_MOVE[MOVE_FROM_COL]];
+        board[LOCAL_MOVE[MOVE_FROM_ROW]][LOCAL_MOVE[MOVE_FROM_COL]] = EMPTY;
+        board[LOCAL_MOVE[MOVE_TO_ROW]][LOCAL_MOVE[MOVE_TO_COL]] = prev_loc_of_piece;
+
+        if(prev_loc_of_piece == C_T && allCompMoves[counter][VER_HOR] == HORIZONTAL)
             COM_T_FIGHTER_HOR_MOVE = true;
         else
             COM_T_FIGHTER_HOR_MOVE = false;
 
-        /* Reset all calls for the nest max iteration.
+        /* Reset all calls for the next max iteration.
          * If COM_T_FIGHTER_HOR_MOVE is true, then Horizontal T Fighter moves
          * will not be generated at all*/
         resetAllMovesAfterChangeOnBoard();
 
         score = min(depth+1, best);
 
-        /* Move back the figure */
-        board[LOCAL_MOVE[MOVE_TO_ROW]][LOCAL_MOVE[MOVE_TO_COL]] = prevFigure;
-        board[LOCAL_MOVE[MOVE_FROM_ROW]][LOCAL_MOVE[MOVE_FROM_COL]] = prevMove;
+        /* Move back the piece */
+        board[LOCAL_MOVE[MOVE_TO_ROW]][LOCAL_MOVE[MOVE_TO_COL]] = prev_piece;
+        board[LOCAL_MOVE[MOVE_FROM_ROW]][LOCAL_MOVE[MOVE_FROM_COL]] = prev_loc_of_piece;
 
         HUM_T_FIGHTER_HOR_MOVE  = LOC_HUM_T_FIGHTER_HOR_MOVE;
         COM_T_FIGHTER_HOR_MOVE = LOC_COM_T_FIGHTER_HOR_MOVE;
@@ -1183,6 +1211,7 @@ int* makeComMove(){
         resetAllMovesAfterChangeOnBoard();
 
         if(score > best){
+            //TODO: replace with memcpy
             BEST_MOVE[0] = allCompMoves[counter][0];
             BEST_MOVE[1] = allCompMoves[counter][1];
             BEST_MOVE[2] = allCompMoves[counter][2];
@@ -1224,12 +1253,11 @@ int findKillerMoveInAllHumMoves(KillerMove *killerMove) {
 
 int min(int depth, int previousBest){
     auto currentTime = std::chrono::high_resolution_clock::now();
-    if (std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastTime).count() > MAX_MILS_ONE_ITER)
-    {
+    if (std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - last_time).count() > MAX_MILS_ONE_ITER) {
         COLLAPSE_RECURSION = true;
         return false;
     }
-    NUM_OF_LEAVES++;
+    NUM_OF_NODES++;
     int best = 20000;
     int score;
     int  LOCAL_HUM_MOVE[4];
@@ -1238,10 +1266,9 @@ int min(int depth, int previousBest){
     bool LOC_HUM_T_FIGHTER_HOR_MOVE;
     bool LOC_COM_T_FIGHTER_HOR_MOVE;
 
-
-    if(checkForWinner(depth) != GAME_NOT_OVER) {
-        return checkForWinner(depth);
-    }
+//    if(checkForWinner(depth) != GAME_NOT_OVER  && depth >= MAXDEPTH - 1) {
+//        return checkForWinner(depth);
+//    }
     if(depth == MAXDEPTH) {
         DEPTH_FOR_OUTPUT = MAXDEPTH;
         return evaluate();
@@ -1249,11 +1276,10 @@ int min(int depth, int previousBest){
 
     int maxMoves = NUM_OF_HUM_MOVES;
 
-
 #if RUN_KILLER_HEURISTIC
     if((!killerMove[depth].empty[0]) || (!killerMove[depth].empty[1])){
         generateAllMoves();
-        NUM_OF_LEAVES++;
+        NUM_OF_NODES++;
         if(findKillerMoveInAllHumMoves(&killerMove[depth]) != -100000){
             int numOfMove = findKillerMoveInAllHumMoves(&killerMove[depth]);
             LOC_COM_T_FIGHTER_HOR_MOVE = COM_T_FIGHTER_HOR_MOVE;
@@ -1269,7 +1295,7 @@ int min(int depth, int previousBest){
             board[LOCAL_HUM_MOVE[MOVE_FROM_ROW]][LOCAL_HUM_MOVE[MOVE_FROM_COL]] = EMPTY;
             board[LOCAL_HUM_MOVE[MOVE_TO_ROW]][LOCAL_HUM_MOVE[MOVE_TO_COL]] = prevMove;
 
-            if(prevMove == H_T && allHumanMoves[counter][VER_HOR] == HORIZ)
+            if(prevMove == H_T && allHumanMoves[counter][VER_HOR] == HORIZONTAL)
                 HUM_T_FIGHTER_HOR_MOVE = true;
             else
                 HUM_T_FIGHTER_HOR_MOVE = false;
@@ -1312,14 +1338,14 @@ int min(int depth, int previousBest){
         LOCAL_HUM_MOVE[2] = allHumanMoves[counter][2];
         LOCAL_HUM_MOVE[3] = allHumanMoves[counter][3];
 
-        int prevFigure =  board[LOCAL_HUM_MOVE[MOVE_TO_ROW]][LOCAL_HUM_MOVE[MOVE_TO_COL]];
+        int prev_piece =  board[LOCAL_HUM_MOVE[MOVE_TO_ROW]][LOCAL_HUM_MOVE[MOVE_TO_COL]];
 
-        int prevMove = board[LOCAL_HUM_MOVE[MOVE_FROM_ROW]][LOCAL_HUM_MOVE[MOVE_FROM_COL]];
+        int prev_loc_of_piece = board[LOCAL_HUM_MOVE[MOVE_FROM_ROW]][LOCAL_HUM_MOVE[MOVE_FROM_COL]];
         board[LOCAL_HUM_MOVE[MOVE_FROM_ROW]][LOCAL_HUM_MOVE[MOVE_FROM_COL]] = EMPTY;
-        board[LOCAL_HUM_MOVE[MOVE_TO_ROW]][LOCAL_HUM_MOVE[MOVE_TO_COL]] = prevMove;
+        board[LOCAL_HUM_MOVE[MOVE_TO_ROW]][LOCAL_HUM_MOVE[MOVE_TO_COL]] = prev_loc_of_piece;
 
 
-        if(prevMove == H_T && allHumanMoves[counter][VER_HOR] == HORIZ)
+        if(prev_loc_of_piece == H_T && allHumanMoves[counter][VER_HOR] == HORIZONTAL)
             HUM_T_FIGHTER_HOR_MOVE = true;
         else
             HUM_T_FIGHTER_HOR_MOVE = false;
@@ -1329,8 +1355,8 @@ int min(int depth, int previousBest){
         score = max(depth+1, best);
 
         //undo move
-        board[LOCAL_HUM_MOVE[MOVE_TO_ROW]][LOCAL_HUM_MOVE[MOVE_TO_COL]] = prevFigure;
-        board[LOCAL_HUM_MOVE[MOVE_FROM_ROW]][LOCAL_HUM_MOVE[MOVE_FROM_COL]] = prevMove;
+        board[LOCAL_HUM_MOVE[MOVE_TO_ROW]][LOCAL_HUM_MOVE[MOVE_TO_COL]] = prev_piece;
+        board[LOCAL_HUM_MOVE[MOVE_FROM_ROW]][LOCAL_HUM_MOVE[MOVE_FROM_COL]] = prev_loc_of_piece;
 
 
         HUM_T_FIGHTER_HOR_MOVE = LOC_COM_T_FIGHTER_HOR_MOVE;
@@ -1386,12 +1412,11 @@ int findKillerMoveInAllCompMoves(KillerMove *killerMove) {
 
 int max(int depth, int previousBest){
     auto currentTime = std::chrono::high_resolution_clock::now();
-    if (std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastTime).count() > MAX_MILS_ONE_ITER)
-    {
+    if (std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - last_time).count() > MAX_MILS_ONE_ITER) {
         COLLAPSE_RECURSION = true;
         return false;
     }
-    NUM_OF_LEAVES++;
+    NUM_OF_NODES++;
     int best = -20000;
     int score;
     int LOCAL_COM_MOVE[4];
@@ -1400,19 +1425,20 @@ int max(int depth, int previousBest){
     bool LOC_HUM_T_FIGHTER_HOR_MOVE;
     bool LOC_COM_T_FIGHTER_HOR_MOVE;
 
-    if(checkForWinner(depth) != GAME_NOT_OVER) {
-        return checkForWinner(depth);
-    }
+//    if(checkForWinner(depth) != GAME_NOT_OVER && depth >= MAXDEPTH - 1) {
+//        return checkForWinner(depth);
+//    }
     if(depth == MAXDEPTH){
         DEPTH_FOR_OUTPUT = MAXDEPTH;
         return (evaluate());
     }
 
     int maxMoves = NUM_OF_COM_MOVES;
+
 #if RUN_KILLER_HEURISTIC
     if((!killerMove[depth].empty[0]) || (!killerMove[depth].empty[1])){
 
-        NUM_OF_LEAVES++;
+        NUM_OF_NODES++;
         if(findKillerMoveInAllCompMoves(&killerMove[depth]) != -100000){
             int numOfMove = findKillerMoveInAllCompMoves(&killerMove[depth]);
             LOC_COM_T_FIGHTER_HOR_MOVE = COM_T_FIGHTER_HOR_MOVE;
@@ -1428,7 +1454,7 @@ int max(int depth, int previousBest){
             board[LOCAL_COM_MOVE[MOVE_FROM_ROW]][LOCAL_COM_MOVE[MOVE_FROM_COL]] = EMPTY;
             board[LOCAL_COM_MOVE[MOVE_TO_ROW]][LOCAL_COM_MOVE[MOVE_TO_COL]] = prevMove;
 
-            if(prevMove == C_T && allCompMoves[counter][VER_HOR] == HORIZ)
+            if(prevMove == C_T && allCompMoves[counter][VER_HOR] == HORIZONTAL)
                 COM_T_FIGHTER_HOR_MOVE = true;
             else
                 COM_T_FIGHTER_HOR_MOVE = false;
@@ -1459,7 +1485,10 @@ int max(int depth, int previousBest){
      best = -20000;
      score = 0;
 #endif
+
     for(;;){
+
+
         LOC_COM_T_FIGHTER_HOR_MOVE = COM_T_FIGHTER_HOR_MOVE;
         LOC_HUM_T_FIGHTER_HOR_MOVE = HUM_T_FIGHTER_HOR_MOVE;
 
@@ -1468,12 +1497,13 @@ int max(int depth, int previousBest){
         LOCAL_COM_MOVE[2] = allCompMoves[counter][2];
         LOCAL_COM_MOVE[3] = allCompMoves[counter][3];
 
-        int prevFigure =   board[LOCAL_COM_MOVE[MOVE_TO_ROW]][LOCAL_COM_MOVE[MOVE_TO_COL]];
-        int prevMove = board[LOCAL_COM_MOVE[MOVE_FROM_ROW]][LOCAL_COM_MOVE[MOVE_FROM_COL]];
-        board[LOCAL_COM_MOVE[MOVE_FROM_ROW]][LOCAL_COM_MOVE[MOVE_FROM_COL]] = EMPTY;
-        board[LOCAL_COM_MOVE[MOVE_TO_ROW]][LOCAL_COM_MOVE[MOVE_TO_COL]] = prevMove;
+        int prev_piece =   board[LOCAL_COM_MOVE[MOVE_TO_ROW]][LOCAL_COM_MOVE[MOVE_TO_COL]];
 
-        if(prevMove == C_T && allCompMoves[counter][VER_HOR] == HORIZ)
+        int prev_loc_of_piece = board[LOCAL_COM_MOVE[MOVE_FROM_ROW]][LOCAL_COM_MOVE[MOVE_FROM_COL]];
+        board[LOCAL_COM_MOVE[MOVE_FROM_ROW]][LOCAL_COM_MOVE[MOVE_FROM_COL]] = EMPTY;
+        board[LOCAL_COM_MOVE[MOVE_TO_ROW]][LOCAL_COM_MOVE[MOVE_TO_COL]] = prev_loc_of_piece;
+
+        if(prev_loc_of_piece == C_T && allCompMoves[counter][VER_HOR] == HORIZONTAL)
             COM_T_FIGHTER_HOR_MOVE = true;
         else
             COM_T_FIGHTER_HOR_MOVE = false;
@@ -1483,8 +1513,8 @@ int max(int depth, int previousBest){
         score = min(depth+1, best);
 
         //undo move
-        board[LOCAL_COM_MOVE[MOVE_TO_ROW]][LOCAL_COM_MOVE[MOVE_TO_COL]] = prevFigure;
-        board[LOCAL_COM_MOVE[MOVE_FROM_ROW]][LOCAL_COM_MOVE[MOVE_FROM_COL]] = prevMove;
+        board[LOCAL_COM_MOVE[MOVE_TO_ROW]][LOCAL_COM_MOVE[MOVE_TO_COL]] = prev_piece;
+        board[LOCAL_COM_MOVE[MOVE_FROM_ROW]][LOCAL_COM_MOVE[MOVE_FROM_COL]] = prev_loc_of_piece;
 
         HUM_T_FIGHTER_HOR_MOVE = LOC_HUM_T_FIGHTER_HOR_MOVE;
         COM_T_FIGHTER_HOR_MOVE = LOC_COM_T_FIGHTER_HOR_MOVE;
