@@ -1276,57 +1276,6 @@ int min(int depth, int previousBest){
 
     int maxMoves = NUM_OF_HUM_MOVES;
 
-#if RUN_KILLER_HEURISTIC
-    if((!killerMove[depth].empty[0]) || (!killerMove[depth].empty[1])){
-        generateAllMoves();
-        NUM_OF_NODES++;
-        if(findKillerMoveInAllHumMoves(&killerMove[depth]) != -100000){
-            int numOfMove = findKillerMoveInAllHumMoves(&killerMove[depth]);
-            LOC_COM_T_FIGHTER_HOR_MOVE = COM_T_FIGHTER_HOR_MOVE;
-            LOC_HUM_T_FIGHTER_HOR_MOVE = HUM_T_FIGHTER_HOR_MOVE;
-
-            LOCAL_HUM_MOVE[0] = allHumanMoves[numOfMove][0];
-            LOCAL_HUM_MOVE[1] = allHumanMoves[numOfMove][1];
-            LOCAL_HUM_MOVE[2] = allHumanMoves[numOfMove][2];
-            LOCAL_HUM_MOVE[3] = allHumanMoves[numOfMove][3];
-
-            int prevFigure =   board[LOCAL_HUM_MOVE[MOVE_TO_ROW]][LOCAL_HUM_MOVE[MOVE_TO_COL]];
-            int prevMove = board[LOCAL_HUM_MOVE[MOVE_FROM_ROW]][LOCAL_HUM_MOVE[MOVE_FROM_COL]];
-            board[LOCAL_HUM_MOVE[MOVE_FROM_ROW]][LOCAL_HUM_MOVE[MOVE_FROM_COL]] = EMPTY;
-            board[LOCAL_HUM_MOVE[MOVE_TO_ROW]][LOCAL_HUM_MOVE[MOVE_TO_COL]] = prevMove;
-
-            if(prevMove == H_T && allHumanMoves[counter][VER_HOR] == HORIZONTAL)
-                HUM_T_FIGHTER_HOR_MOVE = true;
-            else
-                HUM_T_FIGHTER_HOR_MOVE = false;
-
-            resetAllMovesAfterChangeOnBoard();
-
-            score = max(depth+1, best);
-
-            //undo move
-            board[LOCAL_HUM_MOVE[MOVE_TO_ROW]][LOCAL_HUM_MOVE[MOVE_TO_COL]] = prevFigure;
-            board[LOCAL_HUM_MOVE[MOVE_FROM_ROW]][LOCAL_HUM_MOVE[MOVE_FROM_COL]] = prevMove;
-
-            HUM_T_FIGHTER_HOR_MOVE = LOC_COM_T_FIGHTER_HOR_MOVE;
-            COM_T_FIGHTER_HOR_MOVE = LOC_HUM_T_FIGHTER_HOR_MOVE;
-
-            resetAllMovesAfterChangeOnBoard();
-
-            if(score < best){
-                best = score;
-            }
-
-            if(previousBest > best){
-                return best;
-            }
-        }
-    }
-
-    best = 20000;
-    score = 0;
-#endif
-
     for(;;){
         generateAllMoves();
 
@@ -1370,16 +1319,7 @@ int min(int depth, int previousBest){
         }
 
         if(previousBest >= best){
-#if RUN_KILLER_HEURISTIC
-            if(killerMove[depth].empty[1] = false){
-                killerMove[depth].moveTo[0][0] = killerMove[depth].moveTo[1][0];
-                killerMove[depth].moveTo[0][1] = killerMove[depth].moveTo[1][1];
-                killerMove[depth].empty[0] = false;
-            }
-            killerMove[depth].moveTo[1][0] = LOCAL_HUM_MOVE[MOVE_TO_ROW];
-            killerMove[depth].moveTo[1][1] = LOCAL_HUM_MOVE[MOVE_TO_COL];
-            killerMove[depth].empty[1] = false;
-#endif
+
 #if RUN_ALPHA_BETA_OPTIMIZATION
             return best;
 #endif
@@ -1435,57 +1375,6 @@ int max(int depth, int previousBest){
 
     int maxMoves = NUM_OF_COM_MOVES;
 
-#if RUN_KILLER_HEURISTIC
-    if((!killerMove[depth].empty[0]) || (!killerMove[depth].empty[1])){
-
-        NUM_OF_NODES++;
-        if(findKillerMoveInAllCompMoves(&killerMove[depth]) != -100000){
-            int numOfMove = findKillerMoveInAllCompMoves(&killerMove[depth]);
-            LOC_COM_T_FIGHTER_HOR_MOVE = COM_T_FIGHTER_HOR_MOVE;
-            LOC_HUM_T_FIGHTER_HOR_MOVE = HUM_T_FIGHTER_HOR_MOVE;
-
-            LOCAL_COM_MOVE[0] = allCompMoves[numOfMove][0];
-            LOCAL_COM_MOVE[1] = allCompMoves[numOfMove][1];
-            LOCAL_COM_MOVE[2] = allCompMoves[numOfMove][2];
-            LOCAL_COM_MOVE[3] = allCompMoves[numOfMove][3];
-
-            int prevFigure =   board[LOCAL_COM_MOVE[MOVE_TO_ROW]][LOCAL_COM_MOVE[MOVE_TO_COL]];
-            int prevMove = board[LOCAL_COM_MOVE[MOVE_FROM_ROW]][LOCAL_COM_MOVE[MOVE_FROM_COL]];
-            board[LOCAL_COM_MOVE[MOVE_FROM_ROW]][LOCAL_COM_MOVE[MOVE_FROM_COL]] = EMPTY;
-            board[LOCAL_COM_MOVE[MOVE_TO_ROW]][LOCAL_COM_MOVE[MOVE_TO_COL]] = prevMove;
-
-            if(prevMove == C_T && allCompMoves[counter][VER_HOR] == HORIZONTAL)
-                COM_T_FIGHTER_HOR_MOVE = true;
-            else
-                COM_T_FIGHTER_HOR_MOVE = false;
-
-            resetAllMovesAfterChangeOnBoard();
-
-            score = min(depth+1, best);
-
-            //undo move
-            board[LOCAL_COM_MOVE[MOVE_TO_ROW]][LOCAL_COM_MOVE[MOVE_TO_COL]] = prevFigure;
-            board[LOCAL_COM_MOVE[MOVE_FROM_ROW]][LOCAL_COM_MOVE[MOVE_FROM_COL]] = prevMove;
-
-            HUM_T_FIGHTER_HOR_MOVE = LOC_HUM_T_FIGHTER_HOR_MOVE;
-            COM_T_FIGHTER_HOR_MOVE = LOC_COM_T_FIGHTER_HOR_MOVE;
-
-            resetAllMovesAfterChangeOnBoard();
-
-            if(score >  best){
-                best = score;
-            }
-
-            if(previousBest < best){
-                return best;
-            }
-        }
-    }
-
-     best = -20000;
-     score = 0;
-#endif
-
     for(;;){
 
 
@@ -1526,16 +1415,7 @@ int max(int depth, int previousBest){
         }
 
         if(previousBest <= best){
-#if RUN_KILLER_HEURISTIC
-            if(killerMove[depth].empty[1] = false) {
-                killerMove[depth].moveTo[0][0] = killerMove[depth].moveTo[1][0];
-                killerMove[depth].moveTo[0][1] = killerMove[depth].moveTo[1][1];
-                killerMove[depth].empty[0] = false;
-            }
-            killerMove[depth].moveTo[1][0] = LOCAL_COM_MOVE[MOVE_TO_ROW];
-            killerMove[depth].moveTo[1][1] = LOCAL_COM_MOVE[MOVE_TO_COL];
-            killerMove[depth].empty[1] = false;
-#endif
+
 #if RUN_ALPHA_BETA_OPTIMIZATION
             return best;
 #endif
