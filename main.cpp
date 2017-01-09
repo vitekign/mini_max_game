@@ -287,7 +287,7 @@ void convertMoveToInternalRep(char *move){
 
     bool found = regex_match(placeholder, letters);
     if(found){
-        moveFromI[1] = move[0] - 97;
+        moveFromI[1] = tolower(move[0]) - 97;
     } else {
         cout << endl << "first is illegal" << endl;
         moveFromI[1] = -1;
@@ -323,6 +323,7 @@ void convertMoveToInternalRep(char *move){
     cout << "Move is: " << moveFromI[0] << ", " << moveFromI[1] << ", " << moveToI[0] << ", " << moveToI[1] << endl;
 }
 
+//TODO: Refactor move conversion
 char* convertMoveToExternalRep(int *move){
     char *returnValue = new char[5];
     for(int i = 0; i < 2; i++){
@@ -371,6 +372,7 @@ char* convertMoveToExternalRep(int *move){
     returnValue[4] ='\0';
     return returnValue;
 }
+//TODO: Refactor move conversion
 void convertMoveExternalRep(){
     for(int i = 0; i < 2; i++){
         int const *convFrom;
