@@ -2,6 +2,7 @@
 #include <chrono>
 #include <string.h>
 #include <stdlib.h>
+#include <regex>
 
 // g++ -std=c++0x -O3 -march=native -o trench_hero run_game.cpp
 //TODO: change eval func so it takes into account capture of the DEATH STAR
@@ -278,81 +279,50 @@ bool moveLegal(){
             A  B  C  D  E  F  G
  */
 
-//TODO: Get rid of this boilerplate code. Too much of unnecessary code. Instead: 1. Use regex to find out if the input conforms to the required pattern.
-//TODO: 2. Replace the following with simple subtraction expressions.
 void convertMoveToInternalRep(char *move){
-    if(move[0] == 'A' || move[0] == 'a'){
-        moveFromI[1] = 0;
-    } else if(move[0] == 'B' || move[0] == 'b'){
-        moveFromI[1] = 1;
-    } else if(move[0] == 'C' || move[0] == 'c'){
-        moveFromI[1] = 2;
-    } else if(move[0] == 'D' || move[0] == 'd'){
-        moveFromI[1] = 3;
-    } else if(move[0] == 'E' || move[0] == 'e'){
-        moveFromI[1] = 4;
-    } else if(move[0] == 'F' || move[0] == 'f'){
-        moveFromI[1] = 5;
-    } else if(move[0] == 'G' || move[0] == 'g'){
-        moveFromI[1] = 6;
+    regex letters("[A-Ga-g]{1}");
+    char placeholder[2];
+    placeholder[0] = move[0];
+    placeholder[1] = '\0';
+
+    bool found = regex_match(placeholder, letters);
+    if(found){
+        moveFromI[1] = move[0] - 97;
     } else {
+        cout << endl << "first is illegal" << endl;
         moveFromI[1] = -1;
     }
 
-    if(move[1] == '1'){
-        moveFromI[0] = 6;
-    } else if(move[1] == '2'){
-        moveFromI[0] = 5;
-    } else if(move[1] == '3'){
-        moveFromI[0] = 4;
-    } else if(move[1] == '4'){
-        moveFromI[0] = 3;
-    } else if(move[1] == '5'){
-        moveFromI[0] = 2;
-    } else if(move[1] == '6'){
-        moveFromI[0] = 1;
-    } else if(move[1] == '7'){
-        moveFromI[0] = 0;
+    regex digits("[1-7]{1}");
+    placeholder[0] = move[1];
+    found = regex_match(placeholder, digits);
+    if(found){
+        moveFromI[0] = 55 - int(move[1]);
     } else {
+        cout << endl << "second is illegal" << endl;
         moveFromI[0] = -1;
     }
 
-    if(move[2] == 'A' || move[2] == 'a'){
-        moveToI[1] = 0;
-    } else if(move[2] == 'B' || move[2] == 'b'){
-        moveToI[1] = 1;
-    } else if(move[2] == 'C' || move[2] == 'c'){
-        moveToI[1] = 2;
-    } else if(move[2] == 'D' || move[2] == 'd'){
-        moveToI[1] = 3;
-    } else if(move[2] == 'E' || move[2] == 'e'){
-        moveToI[1] = 4;
-    } else if(move[2] == 'F' || move[2] == 'f'){
-        moveToI[1] = 5;
-    } else if(move[2] == 'G' || move[2] == 'g'){
-        moveToI[1] = 6;
+    placeholder[0] = move[2];
+    found = regex_match(placeholder, letters);
+    if(found){
+        moveToI[1] = tolower(move[2]) - 97;
     } else {
+        cout << endl << "third is illegal" << endl;
         moveToI[1] = -1;
     }
 
-    if(move[3] == '1'){
-        moveToI[0] = 6;
-    } else if(move[3] == '2'){
-        moveToI[0] = 5;
-    } else if(move[3] == '3'){
-        moveToI[0] = 4;
-    } else if(move[3] == '4'){
-        moveToI[0] = 3;
-    } else if(move[3] == '5'){
-        moveToI[0] = 2;
-    } else if(move[3] == '6'){
-        moveToI[0] = 1;
-    } else if(move[3] == '7'){
-        moveToI[0] = 0;
+    placeholder[0] = move[3];
+    found = regex_match(placeholder, digits);
+    if(found){
+        moveToI[0] = 55 - int(move[3]);
     } else {
+        cout << endl << "fourth is illegal" << endl;
         moveToI[0] = -1;
     }
+    cout << "Move is: " << moveFromI[0] << ", " << moveFromI[1] << ", " << moveToI[0] << ", " << moveToI[1] << endl;
 }
+
 char* convertMoveToExternalRep(int *move){
     char *returnValue = new char[5];
     for(int i = 0; i < 2; i++){
