@@ -289,7 +289,6 @@ void convertMoveToInternalRep(char *move){
     if(found){
         moveFromI[1] = tolower(move[0]) - 97;
     } else {
-        cout << endl << "first is illegal" << endl;
         moveFromI[1] = -1;
     }
 
@@ -299,7 +298,6 @@ void convertMoveToInternalRep(char *move){
     if(found){
         moveFromI[0] = 55 - int(move[1]);
     } else {
-        cout << endl << "second is illegal" << endl;
         moveFromI[0] = -1;
     }
 
@@ -308,7 +306,6 @@ void convertMoveToInternalRep(char *move){
     if(found){
         moveToI[1] = tolower(move[2]) - 97;
     } else {
-        cout << endl << "third is illegal" << endl;
         moveToI[1] = -1;
     }
 
@@ -317,13 +314,10 @@ void convertMoveToInternalRep(char *move){
     if(found){
         moveToI[0] = 55 - int(move[3]);
     } else {
-        cout << endl << "fourth is illegal" << endl;
         moveToI[0] = -1;
     }
-    cout << "Move is: " << moveFromI[0] << ", " << moveFromI[1] << ", " << moveToI[0] << ", " << moveToI[1] << endl;
 }
 
-//TODO: Refactor move conversion
 char* convertMoveToExternalRep(int *move){
     char *returnValue = new char[5];
     for(int i = 0; i < 2; i++){
@@ -336,43 +330,19 @@ char* convertMoveToExternalRep(int *move){
             convFrom = move+2;
             convTo = returnValue+2;
         }
-        if(convFrom[INT_ROW] == 0){
-            convTo[EXT_ROW] = '7';
-        } else if(convFrom[INT_ROW] == 1){
-            convTo[EXT_ROW] = '6';
-        } else if(convFrom[INT_ROW] == 2){
-            convTo[EXT_ROW] = '5';
-        } else if(convFrom[INT_ROW] == 3){
-            convTo[EXT_ROW] = '4';
-        } else if(convFrom[INT_ROW] == 4){
-            convTo[EXT_ROW] = '3';
-        } else if(convFrom[INT_ROW] == 5){
-            convTo[EXT_ROW] = '2';
-        } else if(convFrom[INT_ROW] == 6){
-            convTo[EXT_ROW] = '1';
+
+        if(convFrom[INT_ROW] >= 0 && convFrom[INT_ROW] <= 6){
+            convTo[EXT_ROW] = char(7 - convFrom[INT_ROW] + int('0'));
         }
 
-
-        if(convFrom[INT_COL] == 0){
-            convTo[EXT_COL] = 'A';
-        } else if(convFrom[INT_COL] == 1){
-            convTo[EXT_COL] = 'B';
-        } else if(convFrom[INT_COL] == 2){
-            convTo[EXT_COL] = 'C';
-        } else if(convFrom[INT_COL] == 3){
-            convTo[EXT_COL] = 'D';
-        } else if(convFrom[INT_COL] == 4){
-            convTo[EXT_COL] = 'E';
-        } else if(convFrom[INT_COL] == 5){
-            convTo[EXT_COL] = 'F';
-        } else if(convFrom[INT_COL] == 6){
-            convTo[EXT_COL] = 'G';
+        if(convFrom[INT_COL] >= 0 && convFrom[INT_COL] <= 6) {
+            convTo[EXT_COL] = char(int('A') + convFrom[INT_COL]);
         }
     }
     returnValue[4] ='\0';
     return returnValue;
 }
-//TODO: Refactor move conversion
+
 void convertMoveExternalRep(){
     for(int i = 0; i < 2; i++){
         int const *convFrom;
@@ -384,36 +354,13 @@ void convertMoveExternalRep(){
             convFrom = moveToI;
             convTo = moveToExternal;
         }
-        if(convFrom[INT_ROW] == 0){
-            convTo[EXT_ROW] = '7';
-        } else if(convFrom[INT_ROW] == 1){
-            convTo[EXT_ROW] = '6';
-        } else if(convFrom[INT_ROW] == 2){
-            convTo[EXT_ROW] = '5';
-        } else if(convFrom[INT_ROW] == 3){
-            convTo[EXT_ROW] = '4';
-        } else if(convFrom[INT_ROW] == 4){
-            convTo[EXT_ROW] = '3';
-        } else if(convFrom[INT_ROW] == 5){
-            convTo[EXT_ROW] = '2';
-        } else if(convFrom[INT_ROW] == 6){
-            convTo[EXT_ROW] = '1';
+
+        if(convFrom[INT_ROW] >= 0 && convFrom[INT_ROW] <= 6){
+            convTo[EXT_ROW] = char(7 - convFrom[INT_ROW] + int('0'));
         }
 
-        if(convFrom[INT_COL] == 0){
-            convTo[EXT_COL] = 'A';
-        } else if(convFrom[INT_COL] == 1){
-            convTo[EXT_COL] = 'B';
-        } else if(convFrom[INT_COL] == 2){
-            convTo[EXT_COL] = 'C';
-        } else if(convFrom[INT_COL] == 3){
-            convTo[EXT_COL] = 'D';
-        } else if(convFrom[INT_COL] == 4){
-            convTo[EXT_COL] = 'E';
-        } else if(convFrom[INT_COL] == 5){
-            convTo[EXT_COL] = 'F';
-        } else if(convFrom[INT_COL] == 6){
-            convTo[EXT_COL] = 'G';
+        if(convFrom[INT_COL] >= 0 && convFrom[INT_COL] <= 6) {
+            convTo[EXT_COL] = char(int('A') + convFrom[INT_COL]);
         }
     }
 }
@@ -1008,6 +955,7 @@ void getAMove(){
 #if RUN_WITH_MOVE_VALIDATION
     if(!moveLegal()) {
         cout << "The move is illegal. Only legal moves are acceptable!" << endl;
+        cout << "Internal move is: " << moveFromI[0] <<", " <<  moveFromI[1]  << ", " << moveToI[0] << ", " << moveToI[1];
         printBoard();
         getAMove();
         return;
